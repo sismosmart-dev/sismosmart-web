@@ -74,7 +74,8 @@ operating model, and strict status checks (`ci/lint`, `ci/test`, `ci/browser`,
 require `governance/pr-origin` on PRs because that check runs after merges on
 `main`, not on normal pull requests.
 
-The `production` environment currently accepts protected branches only and
+The `production` environment now has an explicit deployment-branch allowlist
+containing only `main`, which is protected by `main-standard`; it currently
 contains no migrated secrets. Deploy and scheduled production jobs remain
 disabled in this repository until credentials, rollback, and monitoring pass
 acceptance; the legacy repository remains the active production controller.
