@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This private source repository contains the SismoSmart marketing site, public form API, deployment automation, operational checks, and machine-readable discovery resources. Keep human-facing pages, localized Markdown alternatives, OpenAPI, sitemap, structured data, and LLM indexes consistent with the same public source material.
+This public source repository contains the SismoSmart marketing site, public form API, deployment automation, operational checks, and machine-readable discovery resources. Keep human-facing pages, localized Markdown alternatives, OpenAPI, sitemap, structured data, and LLM indexes consistent with the same public source material.
 
 ## Architecture
 

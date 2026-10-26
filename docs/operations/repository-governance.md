@@ -31,7 +31,7 @@ Production never deploys automatically from a push. `Deploy Production` is manua
 
 ## Production environment approval boundary
 
-The current `production` environment is shared by mutation deploy jobs and scheduled/read-only Production Health jobs. A required-reviewer rule was tested on this shared environment and removed because it also blocks unattended health monitoring.
+The `production` environment is shared by mutation deploy jobs and scheduled/read-only Production Health jobs. Required-reviewer gating is not enabled on this shared environment, because it would also block unattended health monitoring.
 
 Current enforced controls are the main-only environment deployment policy, exact-SHA input, operation-specific confirmation, protected `main`, required repository checks, scoped credentials, transactional activation and rollback. If mandatory human approval for every production mutation is required, create a deploy-only environment or equivalent secret/workflow split before enabling required reviewers. Do not re-enable reviewer gating on the shared environment and silently break scheduled monitoring.
 
@@ -45,7 +45,7 @@ A normal pull request must have successful GitHub evidence for lint, typecheck, 
 
 ## Emergency hotfix
 
-The preferred emergency path remains a focused branch and pull request. A direct push is reserved for a GitHub control-plane outage where delaying the fix creates greater production risk. Record the incident, run every available local quality check, use the exact `main` SHA, verify rollback readiness, and open a follow-up pull request containing the final evidence.
+The preferred emergency path remains a focused branch and pull request. The active repository ruleset prohibits direct pushes to `main`, including routine emergency changes. Use the normal pull-request path. Only the human repository owner may authorize and perform an exceptional break-glass change in GitHub, after recording the incident and recovery plan; agents must never bypass the ruleset.
 
 ## Access and recovery continuity
 
@@ -57,18 +57,33 @@ At least two trusted organization owners or repository administrators should exi
 - High-impact technical and product wording is governed by `../governance/technical-claims-register.md`.
 - Historical audit snapshots under `../archive/` describe past state and must not be treated as current operational truth without revalidation.
 
-## Private Free repository scanning limitation
+## Public organization repository protection and analysis
 
-On GitHub Free with a private organization repository, the built-in CodeQL
-code-scanning integration and private-repository branch protection cannot
-be treated as enabled. The Security workflow runs an independent **Semgrep
-OSS** job with pinned, repository-local security patterns, no telemetry, and
-no runtime network access. Its status is a real CI security signal, but the
-small local ruleset is **not** equivalent to GitHub CodeQL or a full SAST
-coverage claim. The CodeQL job is skipped when the repository is private and
-`ENABLE_CODEQL` is not enabled, instead of succeeding without analysis.
+The organization repository was made **public** with owner authorization on
+2026-10-27 (Türkiye local date). Public GitHub Free repositories support native
+branch rulesets, protected production environments and GitHub CodeQL scanning.
+These controls must be checked against current live GitHub state rather than
+assuming documentation proves enforcement.
 
-Production cutover remains blocked until actual repository protection, code
-scanning/approvals, and protected production credentials are verified under
-a supported GitHub plan/visibility setting. Do not publish the repository or
-start a billable plan merely to work around this limit.
+The repository's active `main-standard` ruleset targets the default branch:
+no branch deletion/force push, linear history, squash-only pull requests,
+review-thread resolution, zero mandatory reviews for the verified solo-owner
+operating model, and strict status checks (`ci/lint`, `ci/test`, `ci/browser`,
+`ci/build`, `security/npm-audit`, `security/gitleaks`, `security/semgrep`,
+`quality/commitlint`, `security/codeql`). No API/agent administrator bypass is configured. Do not
+require `governance/pr-origin` on PRs because that check runs after merges on
+`main`, not on normal pull requests.
+
+The `production` environment now has an explicit deployment-branch allowlist
+containing only `main`, which is protected by `main-standard`; it currently
+contains no migrated secrets. Deploy and scheduled production jobs remain
+disabled in this repository until credentials, rollback, and monitoring pass
+acceptance; the legacy repository remains the active production controller.
+
+Security retains its independent, narrow Semgrep OSS job. Public-repository
+CodeQL analysis was independently verified against a successful `Analyze` step
+and a GitHub Code Scanning analysis record for `main@eda68d1` (2026-10-26);
+there were no open code-scanning alerts at that verification. A subsequent
+public pull request also passed the real `security/codeql` check, so that
+check was added to the mandatory `main-standard` list. Review future alerts. The earlier private Free limitation was resolved by owner-approved
+public visibility, not by treating skipped runs as successful scans.
