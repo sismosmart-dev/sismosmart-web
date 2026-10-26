@@ -31,13 +31,23 @@ Production never deploys automatically from a push. `Deploy Production` is manua
 
 ## Production environment approval boundary
 
-The `production` environment is reserved for unattended read-only Production Health, analytics observability, and manual `status`. It is restricted to `main` without required reviewers, so scheduled health does not wait for an operator. Those jobs fetch their credentials from Doppler `prd_ops` using an environment-scoped `DOPPLER_TOKEN_PRD_OPS` Service Token (never an unscoped repository secret); the external SSH/cPanel principals must be independently read-only. See `doppler-github-actions.md`.
-
-Every mutation-capable `Deploy Production` job (`reconcile`, `permissions`, `retention`, `forms`, `deploy` including `validate-deploy`) uses the separate `production-deploy` environment, restricted to `main` and requiring approval from the verified owner. A deployment run must also satisfy exact-SHA authorization, operation-specific confirmation, protected `main`, required checks and rollback controls. This approval gate must never be placed on the shared read-only `production` environment.
+The `production` environment is restricted to `main` and has **no**
+production secret. The manual `status` job checks public routes only. The
+`production-deploy` environment also allows only `main` and requires approval
+from the repository owner before any workflow can fetch production credentials.
 
 ## Secret isolation
 
-The only user-managed GitHub environment secrets are config-specific, read-only Doppler Service Tokens: `DOPPLER_TOKEN_PRD_OPS` in `production`, and `DOPPLER_TOKEN_PRD_DEPLOY` plus `DOPPLER_TOKEN_PRD_APP` in `production-deploy`. All SSH/cPanel keys, form runtime credentials and DNS values remain in Doppler only. The official pinned Fetch Secrets action masks and injects them per job; the scope checker rejects mismatched or absent configs. Read-only Doppler *access* does not imply read-only provider *credentials*. Currently `prd_ops` and `prd_deploy` share identical privileged infrastructure credentials; the monitoring token must not be provisioned and its workflows must remain disabled until independently restricted provider grants are verified. No secret value may enter a repo, log or artifact. Secret values must never be logged, copied into issues, or committed.
+One Doppler config (`prd_sismosmart`) contains all deployment and operations
+secret values. GitHub only holds `DOPPLER_TOKEN_PRD` in `production-deploy`,
+scoped to Doppler **Read**. That token can still read privileged deployment
+SSH/cPanel credentials, so *all* jobs that use it are owner-reviewed and
+manual-only. The unreviewed `production` environment, public pull-request CI,
+and automatic scheduler never receive it. Old-repository scheduled monitoring
+remains the sole active live controller during this transition. A separate
+public-only or independently restricted monitoring solution is required
+before any unattended new-repository health handoff. See
+`doppler-github-actions.md`.
 
 ## Required checks
 

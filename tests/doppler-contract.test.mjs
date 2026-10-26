@@ -25,7 +25,7 @@ import {
 
 test("production-only Doppler contract exposes the approved project and configs", () => {
   assert.equal(DOPPLER_PROJECT, "sismosmart-web");
-  assert.deepEqual(DOPPLER_CONFIGS, ["ci", "prd_app", "prd_deploy", "prd_ops"]);
+  assert.deepEqual(DOPPLER_CONFIGS, ["prd_sismosmart"]);
 });
 
 test("every environment key has valid least-privilege ownership metadata", () => {
@@ -48,14 +48,14 @@ test("every environment key has valid least-privilege ownership metadata", () =>
 test("measurement protocol authentication uses one canonical secret key", () => {
   const entry = ENVIRONMENT_CONTRACT.GOOGLE_MEASUREMENT_PROTOCOL_API_SECRET;
   assert.equal(entry.classification, "secret");
-  assert.deepEqual(entry.configs, ["prd_ops"]);
-  assert.ok(contractKeysForConfig("prd_ops").includes("GOOGLE_MEASUREMENT_PROTOCOL_API_SECRET"));
+  assert.deepEqual(entry.configs, ["prd_sismosmart"]);
+  assert.ok(contractKeysForConfig("prd_sismosmart").includes("GOOGLE_MEASUREMENT_PROTOCOL_API_SECRET"));
 });
 
 test("retired DNS origin evidence is optional in prd_ops", () => {
   const entry = ENVIRONMENT_CONTRACT.DNS_LEGACY_IPV4;
-  assert.equal(entry.primaryConfig, "prd_ops");
-  assert.deepEqual(entry.configs, ["prd_ops"]);
+  assert.equal(entry.primaryConfig, "prd_sismosmart");
+  assert.deepEqual(entry.configs, ["prd_sismosmart"]);
   assert.equal(entry.required, false);
 });
 
@@ -66,16 +66,16 @@ test("all historical measurement protocol aliases are rejected", () => {
   ]);
   for (const alias of LEGACY_ENV_KEYS) {
     assert.throws(
-      () => validateInventory("prd_ops", [alias]),
+      () => validateInventory("prd_sismosmart", [alias]),
       new RegExp(`Deprecated key: ${alias}`),
     );
   }
 });
 
 
-test("public env schema rejects values, duplicates, and wrong ownership sections", () => {
+test("public env schema rejects values, duplicates, and unsupported config sections", () => {
   assert.throws(
-    () => validatePublicSchema("# [ci]\nPUBLIC_BASE_URL=not-public\n"),
+    () => validatePublicSchema("# [prd_sismosmart]\nPUBLIC_BASE_URL=not-public\n"),
     (error) => {
       assert.match(error.message, /PUBLIC_BASE_URL must be empty/);
       assert.doesNotMatch(error.message, /not-public/);
@@ -84,45 +84,45 @@ test("public env schema rejects values, duplicates, and wrong ownership sections
   );
 
   assert.throws(
-    () => validatePublicSchema("# [ci]\nPUBLIC_BASE_URL=\nPUBLIC_BASE_URL=\n"),
+    () => validatePublicSchema("# [prd_sismosmart]\nPUBLIC_BASE_URL=\nPUBLIC_BASE_URL=\n"),
     /Duplicate key: PUBLIC_BASE_URL/,
   );
 
   assert.throws(
-    () => validatePublicSchema("# [prd_ops]\nPUBLIC_BASE_URL=\n"),
-    /PUBLIC_BASE_URL must be declared under \[ci\]/,
+    () => validatePublicSchema("# [legacy]\nPUBLIC_BASE_URL=\n"),
+    /approved config section/,
   );
 });
 
 test("env schema parser records key names and ownership without retaining values", () => {
-  const parsed = parseEnvSchema("# [ci]\nPUBLIC_BASE_URL=should-not-survive\n");
+  const parsed = parseEnvSchema("# [prd_sismosmart]\nPUBLIC_BASE_URL=should-not-survive\n");
   assert.deepEqual(parsed.entries.map(({ key, section }) => ({ key, section })), [
-    { key: "PUBLIC_BASE_URL", section: "ci" },
+    { key: "PUBLIC_BASE_URL", section: "prd_sismosmart" },
   ]);
   assert.equal("value" in parsed.entries[0], false);
 });
 
 test("Doppler inventory validation is names-only and fails closed", () => {
-  assert.throws(() => validateInventory("prd_ops", ["UNKNOWN_KEY"]), /Unknown key: UNKNOWN_KEY/);
+  assert.throws(() => validateInventory("prd_sismosmart", ["UNKNOWN_KEY"]), /Unknown key: UNKNOWN_KEY/);
   assert.throws(
     () => validateInventory("main", []),
     /Unsupported Doppler config: main/,
   );
 
-  const names = contractKeysForConfig("prd_ops");
-  assert.doesNotThrow(() => validateInventory("prd_ops", names));
+  const names = contractKeysForConfig("prd_sismosmart");
+  assert.doesNotThrow(() => validateInventory("prd_sismosmart", names));
 });
 
 
 test("Doppler runner always includes explicit project and approved config", () => {
   assert.deepEqual(
-    buildDopplerArgs("prd_ops", ["npm", "run", "ops:status"]),
+    buildDopplerArgs("prd_sismosmart", ["npm", "run", "ops:status"]),
     [
       "run",
       "--project",
       "sismosmart-web",
       "--config",
-      "prd_ops",
+      "prd_sismosmart",
       "--",
       "npm",
       "run",
@@ -134,7 +134,7 @@ test("Doppler runner always includes explicit project and approved config", () =
     /Unsupported Doppler config: main/,
   );
   assert.throws(
-    () => buildDopplerArgs("ci", []),
+    () => buildDopplerArgs("prd_sismosmart", []),
     /A command is required/,
   );
 });
@@ -156,10 +156,7 @@ test("public runbooks require explicit production-only Doppler entry points", ()
   );
   const combined = `${secrets}\n${deployment}\n${readme}`;
 
-  assert.match(secrets, /`ci`/);
-  assert.match(secrets, /`prd_app`/);
-  assert.match(secrets, /`prd_deploy`/);
-  assert.match(secrets, /`prd_ops`/);
+  assert.match(secrets, /`prd_sismosmart`/);
   assert.match(combined, /npm run doppler:deploy:validate/);
   assert.match(combined, /npm run doppler:runtime-env/);
   assert.match(combined, /npm run doppler:ops:status/);

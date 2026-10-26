@@ -8,7 +8,7 @@ import {
   storeRefreshToken,
 } from "../scripts/ops/google-oauth-lib.mjs";
 
-test("refresh token goes to Doppler prd_ops through stdin only", () => {
+test("refresh token goes to Doppler prd_sismosmart through stdin only", () => {
   const calls = [];
   const stored = storeRefreshToken("secret-refresh-token\n", (command, args, options) => {
     calls.push({ command, args, options });
@@ -30,7 +30,7 @@ test("refresh token goes to Doppler prd_ops through stdin only", () => {
     "--silent",
     "--no-interactive",
   ]);
-  assert.equal(REFRESH_TOKEN_CONFIG, "prd_ops");
+  assert.equal(REFRESH_TOKEN_CONFIG, "prd_sismosmart");
   assert.equal(options.input, "secret-refresh-token");
   assert.equal(args.some((arg) => arg.includes("secret-refresh-token")), false);
   assert.deepEqual(options.stdio, ["pipe", "ignore", "ignore"]);

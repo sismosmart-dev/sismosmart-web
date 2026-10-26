@@ -1,17 +1,17 @@
 # Ops automation
 
-Bu repo, pazarlama ve analitik operasyonlarını panelden bağımsız yönetebilmek için küçük bir operasyon katmanı içerir. Katman production-only Doppler modeline göre çalışır: komutlar `prd_ops` yapılandırmasıyla, proje ve config açıkça seçilerek çalıştırılır. Yapılandırma modeli için [`docs/secrets-and-observability.md`](secrets-and-observability.md) dosyasına bakın.
+Bu repo, pazarlama ve analitik operasyonlarını panelden bağımsız yönetebilmek için küçük bir operasyon katmanı içerir. Katman production-only Doppler modeline göre çalışır: komutlar `prd_sismosmart` yapılandırmasıyla, proje ve config açıkça seçilerek çalıştırılır. Yapılandırma modeli için [`docs/secrets-and-observability.md`](secrets-and-observability.md) dosyasına bakın.
 
 ## Komutlar
 
-Her komut `node scripts/doppler/run.mjs prd_ops --` ön ekiyle çalışır. Çıplak `npm run ops:*` veya çıplak `doppler run` kullanmayın.
+Her komut `node scripts/doppler/run.mjs prd_sismosmart --` ön ekiyle çalışır. Çıplak `npm run ops:*` veya çıplak `doppler run` kullanmayın.
 
 ```bash
 npm run doppler:ops:status
-node scripts/doppler/run.mjs prd_ops -- npm run ops:ga -- status
-node scripts/doppler/run.mjs prd_ops -- npm run ops:gtm -- status
-node scripts/doppler/run.mjs prd_ops -- npm run ops:search-console -- status
-node scripts/doppler/run.mjs prd_ops -- npm run ops:clarity -- status
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:ga -- status
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:gtm -- status
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:search-console -- status
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:clarity -- status
 ```
 
 `doppler:ops:status` salt okunur durum özetini verir. Diğer örnekler de yalnızca durum okur. Aşağıdaki `create-*`, `publish-*` ve `bootstrap-domain` komutları dış sistemde değişiklik yapar; yalnızca yetkili bir operatör, bilinçli olarak çalıştırmalıdır.
@@ -25,40 +25,40 @@ node scripts/doppler/run.mjs prd_ops -- npm run ops:clarity -- status
 
 `GOOGLE_AUTH_MODE=auto` ile varsayılan davranış önce OAuth'u, o yoksa service account'u kullanmaktır. OAuth, GA, GTM ve Search Console'u aynı kullanıcı hesabıyla birlikte yönetmek için daha rahattır.
 
-Gerekli alan adları `.env.example` içinde değersiz olarak listelenir ve [`config/doppler-contract.mjs`](../config/doppler-contract.mjs) dosyasında `prd_ops` yapılandırmasına bağlanır: `GOOGLE_AUTH_MODE`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`, `GOOGLE_OAUTH_REFRESH_TOKEN`, `GOOGLE_SERVICE_ACCOUNT_KEY_PATH`, `GOOGLE_SERVICE_ACCOUNT_JSON`. Değerler yalnızca Doppler'da tutulur; yerel dosyaya, GitHub'a veya log'a yazılmaz.
+Gerekli alan adları `.env.example` içinde değersiz olarak listelenir ve [`config/doppler-contract.mjs`](../config/doppler-contract.mjs) dosyasında `prd_sismosmart` yapılandırmasına bağlanır: `GOOGLE_AUTH_MODE`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`, `GOOGLE_OAUTH_REFRESH_TOKEN`, `GOOGLE_SERVICE_ACCOUNT_KEY_PATH`, `GOOGLE_SERVICE_ACCOUNT_JSON`. Değerler yalnızca Doppler'da tutulur; yerel dosyaya, GitHub'a veya log'a yazılmaz.
 
 ### Refresh token alma
 
 Yetkili operatör, tek seferlik refresh token'ı yardımcı komutla alabilir:
 
 ```bash
-node scripts/doppler/run.mjs prd_ops -- npm run ops:google-auth -- listen
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:google-auth -- listen
 ```
 
 Komut yerel bir callback sunucusu açar, Google izin URL'sini terminale (gizli değerleri maskeleyerek) yazar ve tarayıcıdan onay verildiğinde callback'i yakalar. Yalnızca URL görmek için `-- url` kullanılır.
 
-Alınan refresh token yerel dosyaya yazılmaz ve terminale basılmaz. Yardımcı komut değeri Doppler CLI'a stdin ile verir ve `sismosmart-web` projesinin `prd_ops` yapılandırmasındaki `GOOGLE_OAUTH_REFRESH_TOKEN` alanına kaydeder. Bunun için yetkili bir Doppler oturumu ve `prd_ops` yazma izni gerekir. Kayıt başarılı olursa çıktıda `saved-to-doppler-prd_ops` yazar; başarısız olursa çıktıdaki uyarıyı izleyip akışı yeniden çalıştırın. Hiçbir durumda kalıcı `.env` oluşturmayın ve değeri GitHub'a veya log'a yapıştırmayın.
+Alınan refresh token yerel dosyaya yazılmaz ve terminale basılmaz. Yardımcı komut değeri Doppler CLI'a stdin ile verir ve `sismosmart-web` projesinin `prd_sismosmart` yapılandırmasındaki `GOOGLE_OAUTH_REFRESH_TOKEN` alanına kaydeder. Bunun için yetkili bir Doppler oturumu ve `prd_sismosmart` yazma izni gerekir. Kayıt başarılı olursa çıktıda `saved-to-doppler-prd_sismosmart` yazar; başarısız olursa çıktıdaki uyarıyı izleyip akışı yeniden çalıştırın. Hiçbir durumda kalıcı `.env` oluşturmayın ve değeri GitHub'a veya log'a yapıştırmayın.
 
 ## Google Analytics
 
 ```bash
-node scripts/doppler/run.mjs prd_ops -- npm run ops:ga -- list-accounts
-node scripts/doppler/run.mjs prd_ops -- npm run ops:ga -- list-properties 123456789
-node scripts/doppler/run.mjs prd_ops -- npm run ops:ga -- list-web-streams 987654321
-node scripts/doppler/run.mjs prd_ops -- npm run ops:ga -- create-property 123456789 "SismoSmart"
-node scripts/doppler/run.mjs prd_ops -- npm run ops:ga -- create-web-stream 987654321 https://sismosmart.com/ "SismoSmart Website"
-node scripts/doppler/run.mjs prd_ops -- npm run ops:ga -- create-measurement-secret 987654321 1234567890 "SismoSmart automation"
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:ga -- list-accounts
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:ga -- list-properties 123456789
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:ga -- list-web-streams 987654321
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:ga -- create-property 123456789 "SismoSmart"
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:ga -- create-web-stream 987654321 https://sismosmart.com/ "SismoSmart Website"
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:ga -- create-measurement-secret 987654321 1234567890 "SismoSmart automation"
 ```
 
 ## Google Tag Manager
 
 ```bash
-node scripts/doppler/run.mjs prd_ops -- npm run ops:gtm -- list-accounts
-node scripts/doppler/run.mjs prd_ops -- npm run ops:gtm -- list-containers 123456
-node scripts/doppler/run.mjs prd_ops -- npm run ops:gtm -- list-workspaces 123456 987654
-node scripts/doppler/run.mjs prd_ops -- npm run ops:gtm -- create-workspace 123456 987654 "Automation Workspace"
-node scripts/doppler/run.mjs prd_ops -- npm run ops:gtm -- create-version 123456 987654 3 "Automated publish"
-node scripts/doppler/run.mjs prd_ops -- npm run ops:gtm -- publish-version accounts/123456/containers/987654/versions/12
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:gtm -- list-accounts
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:gtm -- list-containers 123456
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:gtm -- list-workspaces 123456 987654
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:gtm -- create-workspace 123456 987654 "Automation Workspace"
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:gtm -- create-version 123456 987654 3 "Automated publish"
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:gtm -- publish-version accounts/123456/containers/987654/versions/12
 ```
 
 Not:
@@ -69,11 +69,11 @@ Not:
 ## Search Console ve Site Verification
 
 ```bash
-node scripts/doppler/run.mjs prd_ops -- npm run ops:search-console -- list-sites
-node scripts/doppler/run.mjs prd_ops -- npm run ops:search-console -- generate-token sismosmart.com
-node scripts/doppler/run.mjs prd_ops -- npm run ops:search-console -- verify-domain sismosmart.com
-node scripts/doppler/run.mjs prd_ops -- npm run ops:search-console -- submit-sitemap sc-domain:sismosmart.com https://sismosmart.com/sitemap.xml
-node scripts/doppler/run.mjs prd_ops -- npm run ops:search-console -- bootstrap-domain sismosmart.com --verify
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:search-console -- list-sites
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:search-console -- generate-token sismosmart.com
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:search-console -- verify-domain sismosmart.com
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:search-console -- submit-sitemap sc-domain:sismosmart.com https://sismosmart.com/sitemap.xml
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:search-console -- bootstrap-domain sismosmart.com --verify
 ```
 
 `bootstrap-domain` şunları yapar:
@@ -87,8 +87,8 @@ node scripts/doppler/run.mjs prd_ops -- npm run ops:search-console -- bootstrap-
 ## Clarity
 
 ```bash
-node scripts/doppler/run.mjs prd_ops -- npm run ops:clarity -- status
-node scripts/doppler/run.mjs prd_ops -- npm run ops:clarity -- api-surface
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:clarity -- status
+node scripts/doppler/run.mjs prd_sismosmart -- npm run ops:clarity -- api-surface
 ```
 
 Clarity tarafında şu ayrımı bilerek koruyoruz:
