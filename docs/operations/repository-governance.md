@@ -70,7 +70,7 @@ no branch deletion/force push, linear history, squash-only pull requests,
 review-thread resolution, zero mandatory reviews for the verified solo-owner
 operating model, and strict status checks (`ci/lint`, `ci/test`, `ci/browser`,
 `ci/build`, `security/npm-audit`, `security/gitleaks`, `security/semgrep`,
-`quality/commitlint`). No API/agent administrator bypass is configured. Do not
+`quality/commitlint`, `security/codeql`). No API/agent administrator bypass is configured. Do not
 require `governance/pr-origin` on PRs because that check runs after merges on
 `main`, not on normal pull requests.
 
@@ -82,7 +82,7 @@ acceptance; the legacy repository remains the active production controller.
 Security retains its independent, narrow Semgrep OSS job. Public-repository
 CodeQL analysis was independently verified against a successful `Analyze` step
 and a GitHub Code Scanning analysis record for `main@eda68d1` (2026-10-26);
-there were no open code-scanning alerts at that verification. Require CodeQL
-on pull requests only after a real PR check also passes, and periodically review
-new alerts. The earlier private Free limitation was resolved by owner-approved
+there were no open code-scanning alerts at that verification. A subsequent
+public pull request also passed the real `security/codeql` check, so that
+check was added to the mandatory `main-standard` list. Review future alerts. The earlier private Free limitation was resolved by owner-approved
 public visibility, not by treating skipped runs as successful scans.
