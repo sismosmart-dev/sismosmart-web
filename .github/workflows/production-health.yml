@@ -29,8 +29,8 @@ jobs:
     timeout-minutes: 15
     environment: production
     env:
-      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      CPANEL_API_TOKEN: ${{ secrets.OPS_CPANEL_API_TOKEN }}
+      CPANEL_HOST: ${{ secrets.OPS_CPANEL_HOST }}
       DOMAIN: ${{ secrets.DOMAIN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PUBLIC_BASE_URL: https://sismosmart.com
@@ -42,12 +42,12 @@ jobs:
       REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
       REMOTE_PUBLIC_ROOT: ${{ secrets.REMOTE_PUBLIC_ROOT || 'public_html' }}
       REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.OPS_SSH_HOST }}
+      SSH_PASSWORD: ${{ secrets.OPS_SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.OPS_SSH_PORT }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.OPS_SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.OPS_SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_USER: ${{ secrets.OPS_SSH_USER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3

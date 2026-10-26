@@ -1078,3 +1078,39 @@ test("public repository static analysis is explicit and fail-closed", () => {
   assert.match(rules, /sismosmart-unsafe-raw-jsonld/);
   assert.match(readText("docs/operations/repository-governance.md"), /Public organization repository protection and analysis/);
 });
+
+test("production operations have isolated GitHub environment and secret boundaries", () => {
+  const workflow = readText(".github/workflows/deploy-prod.yml");
+  const health = readText(".github/workflows/production-health.yml");
+  const analytics = readText(".github/workflows/analytics-observability.yml");
+  const governance = readText("docs/operations/repository-governance.md");
+
+  function job(name) {
+    const match = workflow.match(new RegExp(`^  ${name}:\\r?\\n([\\s\\S]*?)(?=^  [a-z][a-z-]*:\\r?\\n|$(?![\\s\\S]))`, "m"));
+    assert.ok(match, `${name} must be a dedicated workflow job`);
+    return match[1];
+  }
+
+  const status = job("status");
+  assert.match(status, /^    environment:\r?\n      name: production$/m);
+  assert.match(status, /secrets\.OPS_SSH_PRIVATE_KEY_BASE64/);
+  assert.match(status, /secrets\.OPS_CPANEL_API_TOKEN/);
+  assert.doesNotMatch(status, /secrets\.(?:SSH_|CPANEL_API_TOKEN|CPANEL_HOST)/);
+
+  for (const name of ["reconcile", "permissions", "retention", "forms", "deploy"]) {
+    const mutatingJob = job(name);
+    assert.match(mutatingJob, /^    environment:\r?\n      name: production-deploy$/m);
+    assert.doesNotMatch(mutatingJob, /^      name: production$/m);
+    assert.doesNotMatch(mutatingJob, /secrets\.OPS_/);
+  }
+
+  assert.match(health, /^    environment: production$/m);
+  assert.match(health, /secrets\.OPS_SSH_PRIVATE_KEY_BASE64/);
+  assert.match(health, /secrets\.OPS_CPANEL_API_TOKEN/);
+  assert.doesNotMatch(health, /secrets\.(?:SSH_|CPANEL_API_TOKEN|CPANEL_HOST)/);
+  assert.match(analytics, /^    environment: production$/m);
+  assert.match(analytics, /DOPPLER_TOKEN:\s*\$\{\{ secrets\.DOPPLER_TOKEN_PRD_OPS \}\}/);
+  assert.match(governance, /production-deploy/);
+  assert.match(governance, /requiring approval|required-reviewer/i);
+  assert.match(governance, /OPS_/);
+});
