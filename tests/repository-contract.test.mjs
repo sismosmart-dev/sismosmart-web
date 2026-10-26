@@ -1063,3 +1063,17 @@ test("production health capacity diagnostics are manual and opt-in", () => {
     /PRODUCTION_HEALTH_CAPACITY_DIAGNOSTICS:\s*\$\{\{\s*github\.event_name == 'workflow_dispatch' && inputs\.capacity_diagnostics \|\| false\s*\}\}/,
   );
 });
+
+
+test("private repository static analysis is explicit and fail-closed", () => {
+  const workflow = readText(".github/workflows/security.yml");
+  const rules = readText(".semgrep/security.yml");
+  assert.match(workflow, /name: security\/semgrep/);
+  assert.match(workflow, /semgrep\/semgrep@sha256:[0-9a-f]{64}/);
+  assert.match(workflow, /--network=none/);
+  assert.match(workflow, /--strict --error --metrics=off/);
+  assert.match(workflow, /github\.event\.repository\.private == false/);
+  assert.doesNotMatch(workflow, /name: Explain CodeQL availability/);
+  assert.match(rules, /sismosmart-disable-node-tls-verification/);
+  assert.match(rules, /sismosmart-unsafe-raw-jsonld/);
+});
