@@ -1065,7 +1065,7 @@ test("production health capacity diagnostics are manual and opt-in", () => {
 });
 
 
-test("private repository static analysis is explicit and fail-closed", () => {
+test("public repository static analysis is explicit and fail-closed", () => {
   const workflow = readText(".github/workflows/security.yml");
   const rules = readText(".semgrep/security.yml");
   assert.match(workflow, /name: security\/semgrep/);
@@ -1076,4 +1076,5 @@ test("private repository static analysis is explicit and fail-closed", () => {
   assert.doesNotMatch(workflow, /name: Explain CodeQL availability/);
   assert.match(rules, /sismosmart-disable-node-tls-verification/);
   assert.match(rules, /sismosmart-unsafe-raw-jsonld/);
+  assert.match(readText("docs/operations/repository-governance.md"), /Public organization repository protection and analysis/);
 });
