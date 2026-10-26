@@ -2,9 +2,9 @@
 
 ## Purpose and safety boundary
 
-The `Production Health` GitHub Actions workflow is a scheduled, read-only audit of the live service. It runs at minute 17 every six hours and can also be dispatched manually. It does not deploy, restart Passenger, reconcile release pointers, delete releases, submit forms, alter DNS, purge caches, or change hosting configuration.
+The new `Production Health` GitHub Actions workflow is a **manual-only**, owner-reviewed audit while the single Doppler config contains privileged credentials. The legacy repository remains the active scheduled monitor. It does not deploy, restart Passenger, reconcile release pointers, delete releases, submit forms, alter DNS, purge caches, or change hosting configuration.
 
-The audit fetches SSH/cPanel values from Doppler `prd_ops` via the `production` environment Service Token only. Doppler read access does not make those provider credentials read-only; independently restricted SSH/cPanel principals must be established before activating scheduled monitoring. Its JSON artifact is retained for 14 days. Artifact upload is deliberately non-blocking so an Actions storage incident cannot hide the actual audit result.
+The audit can fetch SSH/cPanel values from unified Doppler `prd_sismosmart` **only** within the reviewed `production-deploy` environment. Doppler Read access does not make those provider credentials read-only; the automatic schedule was removed to avoid granting it full production keys. Its JSON artifact is retained for 14 days. Artifact upload is deliberately non-blocking so an Actions storage incident cannot hide the actual audit result.
 
 ## What is checked
 

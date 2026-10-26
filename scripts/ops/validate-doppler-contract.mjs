@@ -10,7 +10,7 @@ import {
   contractKeysForConfig,
 } from "../../config/doppler-contract.mjs";
 
-const SECTION_PATTERN = /^#\s*\[(ci|prd_app|prd_deploy|prd_ops)]\s*$/;
+const SECTION_PATTERN = /^#\s*\[(prd_sismosmart)]\s*$/;
 const KEY_PATTERN = /^[A-Z][A-Z0-9_]*$/;
 const DOPPLER_MANAGED_KEYS = new Set([
   "DOPPLER_CONFIG",

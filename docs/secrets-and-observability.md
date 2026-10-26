@@ -6,14 +6,12 @@ All supported configuration names are declared in `.env.example` and
 `config/doppler-contract.mjs`. The example file is a public schema only; every
 assignment is intentionally blank. Persistent `.env` files are unsupported.
 
-The Doppler project is `sismosmart-web` and uses four least-privilege configs:
-
-| Config | Responsibility |
-| --- | --- |
-| `ci` | Production build inputs, lint, typecheck, tests, and build validation |
-| `prd_app` | Server-side form forwarding and protected runtime configuration |
-| `prd_deploy` | Deployment credentials, coordinates, rollback, and release policy |
-| `prd_ops` | Read-only production status, analytics, Search Console, Clarity, DNS, and mail audits |
+The Doppler project is `sismosmart-web` and targets **one** production config:
+`prd_sismosmart`. CI/build validation runs without any production Service
+Token. Deployment, SSH, cPanel, runtime forms, DNS and Google observability
+values are consolidated only in the Doppler protected config. Do not use
+its single token for unattended production audits; see
+`operations/doppler-github-actions.md`.
 
 `doppler.yaml` declares only the project. It deliberately has no `config`
 field, so an unqualified command cannot inherit production credentials from
@@ -27,14 +25,10 @@ The default check reads names only and never reads a secret value:
 npm run doppler:check
 ```
 
-An authorized operator can compare a Doppler config with the repository
-contract using the CLI names-only response:
+The consolidated config is audited using **names only**:
 
 ```bash
-node scripts/ops/validate-doppler-contract.mjs --doppler ci
-node scripts/ops/validate-doppler-contract.mjs --doppler prd_app
-node scripts/ops/validate-doppler-contract.mjs --doppler prd_deploy
-node scripts/ops/validate-doppler-contract.mjs --doppler prd_ops
+node scripts/ops/validate-doppler-contract.mjs --doppler prd_sismosmart
 ```
 
 Validation output is restricted to config names, key names, and counts. Raw
@@ -42,7 +36,7 @@ Doppler errors and values are not forwarded to logs.
 
 ## Production entry points
 
-Every repository entry point selects both project and config explicitly:
+Deployment and owner-invoked operations use explicit project/config selection. CI remains token-free:
 
 ```bash
 npm run doppler:ci
@@ -56,29 +50,25 @@ unless an approved maintenance action invokes the underlying command with
 `--apply`. A runtime environment file must remain outside the public web root
 and must have mode `0600`.
 
-Do not substitute a bare `doppler run` command, directory-scoped config, or a
-shared all-purpose config for these entry points.
+Do not substitute a bare `doppler run` command, directory-scoped config or
+a personal/CLI token inside GitHub Actions. One production config means only
+reviewer-gated jobs may fetch its entire credential inventory.
 
-For GitHub Actions, only scoped Doppler Service Tokens are stored as GitHub
-environment secrets. The production SSH/cPanel, form and DNS credentials remain
-exclusively in Doppler; see `operations/doppler-github-actions.md`. The pinned
-Fetch Secrets action masks values on injection. The operator-local CLI wrappers
-above remain for explicit CLI tasks; they are not the GitHub Actions
-workflow mechanism.
+For GitHub Actions, only `DOPPLER_TOKEN_PRD` in the reviewed
+`production-deploy` environment can read the unified config. The production
+SSH/cPanel/form/DNS credentials remain exclusively in Doppler. The unreviewed
+`production` environment holds **no** token; unattended privileged monitoring
+remains with the old live controller until a separate safe replacement passes.
 
 ## Migration and rollback boundary
 
-The previous broad config is a temporary migration source only. Copy values
-through the protected Doppler UI or authorized API, map each name according to
-`config/doppler-contract.mjs`, and validate each target config by name. Never
-use shell tracing, print a secret, paste values into GitHub, or archive a
-secret-bearing file.
-
-GitHub Actions remains the sole workflow control plane. Issue #8 provides
-scoped workflow authentication; issue #10 removes the retired secondary
-automation surface. Only after all four configs pass names-only checks, build validation,
-non-activating deployment validation, runtime generation, and read-only
-operations may the broad migration config be disabled.
+Legacy `ci`, `prd_app`, `prd_deploy` and `prd_ops` configs remain active
+migration sources; the new empty `prd_sismosmart` config must be populated
+through the official Doppler UI, resolving duplicate keys without sending
+secret values through logs or GitHub. Do not retire an old config until every
+consumer has migrated. Do not enable new operational workflows before the
+single-config token, review approvals, safe non-activating preflight and
+monitoring handoff are validated.
 
 Credentials previously present in an over-permissive file must be rotated.
 The persistent file may be removed only after every production consumer is

@@ -74,36 +74,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch and mask Doppler prd_ops secrets
-        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
-        with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
-          inject-env-vars: true
-
-      - name: Verify scoped Doppler prd_ops grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_ops
-
-      - name: Validate required read-only status secrets
-        shell: bash
-        run: |
-          missing=()
-          for name in SSH_HOST SSH_PORT SSH_USER; do
-            if [ -z "${!name:-}" ]; then
-              missing+=("$name")
-            fi
-          done
-
-          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
-            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
-          fi
-
-          if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing required status secrets: %s\n' "${missing[*]}"
-            exit 1
-          fi
-
-      - name: Read application status
-        run: npm run deploy:status
+      - name: Explain public-only status boundary
+        run: echo "Public route verification only; privileged production status requires reviewed deployment access."
 
       - name: Verify public routes without form delivery
         env:
@@ -132,14 +104,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch and mask Doppler prd_deploy secrets
+      - name: Fetch and mask Doppler prd_sismosmart secrets
         uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
         with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD }}
           inject-env-vars: true
 
-      - name: Verify scoped Doppler prd_deploy grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
+      - name: Verify scoped Doppler prd_sismosmart grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
 
       - name: Validate required reconciliation secrets
         shell: bash
@@ -195,14 +167,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch and mask Doppler prd_deploy secrets
+      - name: Fetch and mask Doppler prd_sismosmart secrets
         uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
         with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD }}
           inject-env-vars: true
 
-      - name: Verify scoped Doppler prd_deploy grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
+      - name: Verify scoped Doppler prd_sismosmart grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
 
       - name: Validate required permission-repair secrets
         shell: bash
@@ -258,14 +230,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch and mask Doppler prd_deploy secrets
+      - name: Fetch and mask Doppler prd_sismosmart secrets
         uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
         with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD }}
           inject-env-vars: true
 
-      - name: Verify scoped Doppler prd_deploy grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
+      - name: Verify scoped Doppler prd_sismosmart grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
 
       - name: Validate required retention secrets
         shell: bash
@@ -323,23 +295,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch and mask Doppler prd_deploy secrets
+      - name: Fetch and mask Doppler prd_sismosmart secrets
         uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
         with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD }}
           inject-env-vars: true
 
-      - name: Verify scoped Doppler prd_deploy grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
-
-      - name: Fetch and mask Doppler prd_app secrets
-        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
-        with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_APP }}
-          inject-env-vars: true
-
-      - name: Verify scoped Doppler prd_app grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_app
+      - name: Verify scoped Doppler prd_sismosmart grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
 
       - name: Validate form runtime inputs
         shell: bash
@@ -426,23 +389,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch and mask Doppler prd_deploy secrets
+      - name: Fetch and mask Doppler prd_sismosmart secrets
         uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
         with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD }}
           inject-env-vars: true
 
-      - name: Verify scoped Doppler prd_deploy grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
-
-      - name: Fetch and mask Doppler prd_app secrets
-        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
-        with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_APP }}
-          inject-env-vars: true
-
-      - name: Verify scoped Doppler prd_app grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_app
+      - name: Verify scoped Doppler prd_sismosmart grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
 
       - name: Validate required deployment secrets
         shell: bash

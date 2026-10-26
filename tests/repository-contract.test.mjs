@@ -287,7 +287,8 @@ test("mail DNS monitoring preserves staged DMARC enforcement", () => {
   assert.equal(config.dmarc.reportMailbox, "info@sismosmart.com");
   assert.equal(config.spf.requiredInclude, "include:relay.mailbaby.net");
   assert.equal(config.dkim.minimumRsaBits, 2048);
-  assert.match(workflow, /schedule:/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /schedule:|workflow_run:/);
   assert.match(workflow, /npm run ops:mail-dns/);
   assert.match(audit, /DMARC enforcement observation/);
   assert.match(audit, /inspectStartTls/);
@@ -367,9 +368,9 @@ test("analytics observability uses canonical public config and fail-closed conse
   assert.ok(production.includes("vars.NEXT_PUBLIC_GA_ID"));
   assert.ok(!production.includes("secrets.NEXT_PUBLIC_GA_ID"));
   assert.match(workflow, /dopplerhq\/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534/);
-  assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD_OPS/);
+  assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD/);
   assert.match(workflow, /inject-env-vars: true/);
-  assert.match(workflow, /node scripts\/ops\/check-fetched-doppler\.mjs prd_ops/);
+  assert.match(workflow, /node scripts\/ops\/check-fetched-doppler\.mjs prd_sismosmart/);
   assert.match(workflow, /npm run --silent ops:status/);
   assert.match(workflow, /npm run ops:analytics-admin-audit/);
   assert.match(workflow, /npm run ops:analytics-audit/);
@@ -377,7 +378,8 @@ test("analytics observability uses canonical public config and fail-closed conse
   assert.doesNotMatch(workflow, /vars\.(?:NEXT_PUBLIC|GOOGLE_|CLARITY_)/);
   assert.doesNotMatch(workflow, /secrets\.(?:GOOGLE_|CLARITY_)/);
   assert.ok(workflow.includes("always()"));
-  assert.match(workflow, /schedule:/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /schedule:|workflow_run:/);
   assert.match(runbook, /GTM owns/);
   assert.match(runbook, /OAuth refresh token/);
   assert.match(runbook, /auth-degraded/);
@@ -539,14 +541,15 @@ test("DNS cutover audit protects delegation, origin services, and legacy isolati
   assert.equal(config.originIpv4, undefined);
   assert.equal(config.legacyIpv4, undefined);
   assert.match(audit, /hydrateNetworkConfig/);
-  assert.match(workflow, /environment: production/);
-  assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD_OPS/);
+  assert.match(workflow, /environment: production-deploy/);
+  assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD/);
   assert.doesNotMatch(workflow, /secrets\.DNS_(?:ORIGIN|LEGACY)_IPV4/);
   assert.match(audit, /registry delegation/);
   assert.match(audit, /no current DNS answer references legacy IPv4/);
   assert.match(auditLib, /isolated-provider-catch-all/);
   assert.match(workflow, /npm run ops:dns-cutover/);
-  assert.match(workflow, /schedule:/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /schedule:|workflow_run:/);
   assert.match(runbook, /Rollback procedure/);
   assert.match(runbook, /Never point apex or `www` to the retired origin/i);
 });
@@ -624,7 +627,8 @@ test("production health monitoring is scheduled, least-privilege, and storage-sa
   const workflow = readText(".github/workflows/production-health.yml");
   const packageJson = readJson("package.json");
 
-  assert.match(workflow, /cron:\s*["']17 \*\/6 \* \* \*["']/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /schedule:/);
   assert.match(
     workflow,
     /permissions:\s*\r?\n\s+actions:\s*read\r?\n\s+contents:\s*read/,
@@ -1025,7 +1029,7 @@ test("Search Console performance documentation preserves the Doppler and privacy
   const normalizedRunbook = runbook.toLowerCase();
   for (const phrase of [
     "sismosmart-web",
-    "prd_ops",
+    "prd_sismosmart",
     "read-only",
     "Search Analytics query",
     "28-day",
@@ -1069,47 +1073,38 @@ test("public repository static analysis is explicit and fail-closed", () => {
   assert.match(readText("docs/operations/repository-governance.md"), /Public organization repository protection and analysis/);
 });
 
-test("production workflows use environment-only Doppler bootstrap tokens", () => {
+test("only owner-reviewed production jobs receive a unified Doppler token", () => {
   const deploy = readText(".github/workflows/deploy-prod.yml");
   const health = readText(".github/workflows/production-health.yml");
   const analytics = readText(".github/workflows/analytics-observability.yml");
   const dns = readText(".github/workflows/dns-cutover.yml");
   const mail = readText(".github/workflows/mail-dns.yml");
-  const governance = readText("docs/operations/repository-governance.md");
-  function job(name) {
-    const blocks = deploy.split(/^  (?=[a-z][a-z-]*:)/m);
-    const found = blocks.find((block) => block.startsWith(`${name}:\n`));
-    assert.ok(found, `${name} must exist`);
-    return found;
-  }
-  const token = (source, scope) => {
-    assert.ok(source.includes(`secrets.DOPPLER_TOKEN_${scope}`));
-    assert.match(source, /dopplerhq\/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534/);
-    assert.match(source, /inject-env-vars: true/);
-    assert.match(source, /node scripts\/ops\/check-fetched-doppler\.mjs/);
+
+  const blocks = deploy.split(/^  (?=[a-z][a-z-]*:)/m);
+  const job = (name) => {
+    const value = blocks.find((part) => part.startsWith(`${name}:\n`));
+    assert.ok(value, `Missing job ${name}`);
+    return value;
   };
   const status = job("status");
   assert.match(status, /name: production\n/);
-  token(status, "PRD_OPS");
-  assert.doesNotMatch(status, /DOPPLER_TOKEN_PRD_DEPLOY|DOPPLER_TOKEN_PRD_APP/);
+  assert.doesNotMatch(status, /secrets\.|secrets-fetch-action|npm run deploy:status/);
+
   for (const name of ["reconcile", "permissions", "retention", "forms", "deploy"]) {
-    const mutation = job(name);
-    assert.match(mutation, /name: production-deploy\n/);
-    token(mutation, "PRD_DEPLOY");
-    assert.doesNotMatch(mutation, /DOPPLER_TOKEN_PRD_OPS/);
-    if (["forms", "deploy"].includes(name)) token(mutation, "PRD_APP");
-    else assert.doesNotMatch(mutation, /DOPPLER_TOKEN_PRD_APP/);
+    const body = job(name);
+    assert.match(body, /name: production-deploy\n/);
+    assert.match(body, /secrets\.DOPPLER_TOKEN_PRD/);
+    assert.match(body, /check-fetched-doppler\.mjs prd_sismosmart/);
+    assert.equal((body.match(/secrets-fetch-action@/g) || []).length, 1);
   }
-  for (const readOnly of [health, analytics, dns, mail]) {
-    assert.match(readOnly, /environment: production/);
-    token(readOnly, "PRD_OPS");
-    assert.doesNotMatch(readOnly, /DOPPLER_TOKEN_PRD_DEPLOY|DOPPLER_TOKEN_PRD_APP/);
+  for (const source of [health, analytics, dns, mail]) {
+    assert.match(source, /environment: production-deploy/);
+    assert.match(source, /secrets\.DOPPLER_TOKEN_PRD/);
+    assert.doesNotMatch(source, /schedule:|workflow_run:/);
   }
-  assert.match(health, /GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
-  assert.match(governance, /production-deploy/);
-  for (const workflow of [deploy, health, analytics, dns, mail]) {
-    for (const m of workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)) {
-      assert.match(m[1], /^DOPPLER_TOKEN_PRD_(OPS|DEPLOY|APP)$/);
+  for (const source of [deploy, health, analytics, dns, mail]) {
+    for (const m of source.matchAll(/secrets\.([A-Z0-9_]+)/g)) {
+      assert.equal(m[1], "DOPPLER_TOKEN_PRD");
     }
   }
 });
