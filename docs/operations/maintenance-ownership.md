@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This runbook defines who is accountable for routine maintenance, release operations, provider access, secret rotation, incident response, and recovery continuity for `SismoSmart/sismosmart-web`. It records roles and procedures, never credential values, recovery codes, private keys, personal phone numbers, or customer data.
+This runbook defines who is accountable for routine maintenance, release operations, provider access, secret rotation, incident response, and recovery continuity for `sismosmart-dev/sismosmart-web`. It records roles and procedures, never credential values, recovery codes, private keys, personal phone numbers, or customer data.
 
 The repository currently relies on a small administrator group. A **second administrator** with independent MFA and recovery material is required for continuity. Until that appointment is complete, the primary administrator must keep the provider and recovery inventory current in the approved password manager or business continuity vault outside this repository.
 

@@ -224,7 +224,7 @@ test("private repository metadata records homepage and no-license decision", asy
   assert.equal(packageJson.private, true);
   assert.equal(packageJson.homepage, siteConfig.url);
   assert.equal(packageJson.license, "UNLICENSED");
-  assert.equal(packageJson.repository?.url, "https://github.com/SismoSmart/sismosmart-web.git");
+  assert.equal(packageJson.repository?.url, "https://github.com/sismosmart-dev/sismosmart-web.git");
   const license = await read("LICENSE");
   assert.match(license, /All rights reserved/i);
   assert.match(license, /no license is granted/i);

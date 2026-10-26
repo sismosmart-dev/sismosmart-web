@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This public repository contains the SismoSmart marketing site, public form API, deployment automation, operational checks, and machine-readable discovery resources. Keep human-facing pages, localized Markdown alternatives, OpenAPI, sitemap, structured data, and LLM indexes consistent with the same public source material.
+This private source repository contains the SismoSmart marketing site, public form API, deployment automation, operational checks, and machine-readable discovery resources. Keep human-facing pages, localized Markdown alternatives, OpenAPI, sitemap, structured data, and LLM indexes consistent with the same public source material.
 
 ## Architecture
 
@@ -48,9 +48,9 @@ npm run test:browser
 
 Use the existing focused test file when changing one subsystem, then run the complete quality gate before opening or updating a pull request.
 
-## Public repository safety
+## Public-facing application safety
 
-This is a public repository. Never commit or paste:
+The source repository is private, but the deployed site and public APIs remain publicly accessible. Never commit or paste:
 
 - credentials, private keys, access material, recovery material, or configuration values;
 - private endpoints, origin addresses, provider account identifiers, or internal host details;

@@ -21,7 +21,7 @@
     "eslint-config-next": "16.4.2",
     "googleapis": "^172.0.0",
     "node-domexception": "file:vendor/node-domexception",
-    "puppeteer-core": "25.3.0",
+    "puppeteer-core": "25.16.0",
     "ssh2": "^1.17.0",
     "ssh2-sftp-client": "^12.1.1",
     "tailwindcss": "^4.3.3",
@@ -34,7 +34,7 @@
   "overrides": {
     "braces": "$braces",
     "postcss": "8.5.23",
-    "fast-uri": "3.1.8",
+    "fast-uri": "3.1.9",
     "source-map-js": "1.2.2",
     "minimatch": {
       "brace-expansion": "$brace-expansion"
@@ -87,9 +87,9 @@
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SismoSmart/sismosmart-web.git"
+    "url": "https://github.com/sismosmart-dev/sismosmart-web.git"
   },
   "bugs": {
-    "url": "https://github.com/SismoSmart/sismosmart-web/issues"
+    "url": "https://github.com/sismosmart-dev/sismosmart-web/issues"
   }
 }

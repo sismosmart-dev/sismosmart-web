@@ -47,7 +47,8 @@ test("AGENTS.md defines repository commands, public safety, and review expectati
   assert.match(source, /npm run typecheck/);
   assert.match(source, /npm test/);
   assert.match(source, /npm run build/);
-  assert.match(source, /public repository/i);
+  assert.match(source, /private source repository/i);
+  assert.match(source, /public-facing application safety/i);
   assert.match(source, /Doppler/);
   assert.match(source, /GitHub Actions/);
   assert.match(source, /bot/i);

@@ -31,7 +31,7 @@ yayımlanır. HTML sayfaları canonical, hreflang, Markdown alternatifi ve `/llm
 - Pilot doğrulaması bekleyen özellikler `design target`, `planned`, `validation pending` veya eşdeğer modaliteyle yazılır.
 - Tarihi geçmiş yol haritası, fiyat, yatırım, pilot veya sertifikasyon varsayımları güncel gerçek gibi yayımlanmaz.
 - Cihaz verisi, veri yerleşimi, araştırma erişimi ve cihaz güvenliği uygulanmış/onaylanmış olmadıkça gelecek veya koşullu akış olarak anlatılır.
-- Herkese açık repoya secret, müşteri verisi, origin adresi ya da özel operasyon kanıtı girmez.
+- Kaynak depo özel olsa da secret, müşteri verisi, origin adresi ya da özel operasyon kanıtı Git'e veya herkese açık çıktılara girmez.
 
 Yazım için [`docs/content-style-guide.md`](docs/content-style-guide.md), kanıt sınıfları için claims register esas alınır.
 

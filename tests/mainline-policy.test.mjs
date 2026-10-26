@@ -56,7 +56,7 @@ test("mainline verifier succeeds immediately without sleeping", async () => {
       return jsonResponse([mergedMainPr()]);
     },
     logger: { log: (message) => logs.push(message) },
-    repository: "SismoSmart/sismosmart-web",
+    repository: "sismosmart-dev/sismosmart-web",
     sleep: async (delay) => sleeps.push(delay),
     token: "TEST_AUTH_SENTINEL",
   });
@@ -66,7 +66,7 @@ test("mainline verifier succeeds immediately without sleeping", async () => {
   assert.equal(sleeps.length, 0);
   assert.equal(
     requests[0].url,
-    "https://api.github.com/repos/SismoSmart/sismosmart-web/commits/abc123/pulls",
+    "https://api.github.com/repos/sismosmart-dev/sismosmart-web/commits/abc123/pulls",
   );
   assert.equal(requests[0].options.headers.authorization, "Bearer TEST_AUTH_SENTINEL");
   assert.match(logs.at(-1), /abc123 is associated with 1 merged pull request/);
@@ -92,7 +92,7 @@ test("mainline verifier tolerates bounded association propagation", async () => 
     delayMs: 25,
     fetchImpl: async () => jsonResponse(responses[requests++]),
     logger: { log: (message) => logs.push(message) },
-    repository: "SismoSmart/sismosmart-web",
+    repository: "sismosmart-dev/sismosmart-web",
     sleep: async (delay) => sleeps.push(delay),
     token: "TEST_AUTH_SENTINEL",
   });
@@ -118,7 +118,7 @@ test("mainline verifier fails after the bounded attempt budget", async () => {
         return jsonResponse([]);
       },
       logger: { log() {} },
-      repository: "SismoSmart/sismosmart-web",
+      repository: "sismosmart-dev/sismosmart-web",
       sleep: async (delay) => sleeps.push(delay),
       token: "TEST_AUTH_SENTINEL",
     }),
@@ -142,7 +142,7 @@ test("GitHub API failures fail closed without retry", async () => {
         return jsonResponse({ message: "forbidden" }, 403);
       },
       logger: { log() {} },
-      repository: "SismoSmart/sismosmart-web",
+      repository: "sismosmart-dev/sismosmart-web",
       sleep: async (delay) => sleeps.push(delay),
       token: "TEST_AUTH_SENTINEL",
     }),

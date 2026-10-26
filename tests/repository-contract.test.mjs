@@ -756,8 +756,8 @@ test("GitHub automation files are present", () => {
   }
 
   const codeowners = readText(".github/CODEOWNERS");
-  assert.match(codeowners, /@SismoSmart/);
-  assert.doesNotMatch(codeowners, /@oaslananka\b/i);
+  assert.match(codeowners, /@oaslananka/);
+  assert.doesNotMatch(codeowners, /@SismoSmart\b/i);
 
   const renovate = readJson("renovate.json");
   assert.ok(renovate.extends.includes("helpers:pinGitHubActionDigests"));
