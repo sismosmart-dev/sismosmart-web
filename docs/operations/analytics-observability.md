@@ -57,7 +57,7 @@ npm run ops:clarity -- status
 npm run ops:analytics-audit -- --base-url https://sismosmart.com --output .artifacts/analytics-observability.json
 ```
 
-The `Analytics Observability` GitHub workflow runs manually, weekly, and after a successful production deployment. It installs the pinned official Doppler CLI action, validates the names-only `prd_ops` inventory, and executes every operational command with explicit `--project sismosmart-web --config prd_ops` selection. It:
+The `Analytics Observability` GitHub workflow runs manually, weekly, and after a successful production deployment. It uses the pinned official Doppler Fetch Secrets action with the `prd_ops` Service Token scoped to the `production` environment. The action masks and injects config values per job; the scope check fails closed if the expected config was not fetched, then the operational commands run using those values. It:
 
 1. validates GA4, GTM, Search Console, and Clarity resource access;
 2. checks all six locales with a real Chrome browser;

@@ -19,13 +19,11 @@ concurrency:
 
 env:
   NODE_VERSION: "22.18.0"
-  DOPPLER_PROJECT: "sismosmart-web"
-  DOPPLER_CONFIG: "prd_ops"
 
 jobs:
   audit:
     name: ops/analytics-observability
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: production
@@ -41,41 +39,35 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - name: Install Doppler CLI
-        uses: dopplerhq/cli-action@014df23b1329b615816a38eb5f473bb9000700b1  # v3
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate read-only operations inventory
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
-        run: npm run doppler:check -- --doppler prd_ops
+      - name: Fetch and mask Doppler prd_ops secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_ops grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_ops
 
       - name: Record canonical configuration status
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p .artifacts/analytics
-          doppler run --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG" -- npm run --silent ops:status > .artifacts/analytics/ops-status.json
-          doppler run --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG" -- npm run --silent ops:clarity -- status > .artifacts/analytics/clarity-status.json
+          npm run --silent ops:status > .artifacts/analytics/ops-status.json
+          npm run --silent ops:clarity -- status > .artifacts/analytics/clarity-status.json
 
       - name: Verify Google administrative resources
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
         run: >-
-          doppler run --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG" --
           npm run ops:analytics-admin-audit -- --output-dir .artifacts/analytics
 
       - name: Audit consent, tag loading, and form events in every locale
         env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
           ANALYTICS_AUDIT_BASE_URL: https://sismosmart.com
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
         run: >-
-          doppler run --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG" --
           npm run ops:analytics-audit --
           --output .artifacts/analytics/browser-audit.json
 

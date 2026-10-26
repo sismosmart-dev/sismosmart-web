@@ -59,6 +59,13 @@ and must have mode `0600`.
 Do not substitute a bare `doppler run` command, directory-scoped config, or a
 shared all-purpose config for these entry points.
 
+For GitHub Actions, only scoped Doppler Service Tokens are stored as GitHub
+environment secrets. The production SSH/cPanel, form and DNS credentials remain
+exclusively in Doppler; see `operations/doppler-github-actions.md`. The pinned
+Fetch Secrets action masks values on injection. The operator-local CLI wrappers
+above remain for explicit CLI tasks; they are not the GitHub Actions
+workflow mechanism.
+
 ## Migration and rollback boundary
 
 The previous broad config is a temporary migration source only. Copy values

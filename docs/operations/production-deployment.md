@@ -2,7 +2,7 @@
 
 ## Safety model
 
-Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the read-only `status` operation uses a separate `production` environment. Neither environment currently contains migrated secrets.
+Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the read-only `status` operation uses a separate `production` environment. Only config-scoped Doppler Service Tokens should ever be placed in GitHub environment secrets; real deployment/SSH/form values stay in Doppler. See `doppler-github-actions.md`. Both new environments currently lack tokens pending secure provisioning and acceptance.
 
 Use the workflow operations in this order:
 

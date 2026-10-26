@@ -29,25 +29,10 @@ jobs:
     timeout-minutes: 15
     environment: production
     env:
-      CPANEL_API_TOKEN: ${{ secrets.OPS_CPANEL_API_TOKEN }}
-      CPANEL_HOST: ${{ secrets.OPS_CPANEL_HOST }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
       PUBLIC_BASE_URL: https://sismosmart.com
       PRODUCTION_HEALTH_OUTPUT: .artifacts/production-health.json
       PRODUCTION_HEALTH_CAPACITY_DIAGNOSTICS: ${{ github.event_name == 'workflow_dispatch' && inputs.capacity_diagnostics || false }}
-      REMOTE_APP_DOMAIN: ${{ secrets.REMOTE_APP_DOMAIN || secrets.DOMAIN }}
-      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
-      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
-      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
-      REMOTE_PUBLIC_ROOT: ${{ secrets.REMOTE_PUBLIC_ROOT || 'public_html' }}
-      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
-      SSH_HOST: ${{ secrets.OPS_SSH_HOST }}
-      SSH_PASSWORD: ${{ secrets.OPS_SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.OPS_SSH_PORT }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.OPS_SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.OPS_SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_USER: ${{ secrets.OPS_SSH_USER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -57,6 +42,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and mask Doppler prd_ops secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_ops grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_ops
 
       - name: Validate required read-only audit secrets
         shell: bash
@@ -76,9 +73,6 @@ jobs:
             printf 'Missing required production health secrets: %s\n' "${missing[*]}"
             exit 1
           fi
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Run production health audit
         run: npm run ops:production-health

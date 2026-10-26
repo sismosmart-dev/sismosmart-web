@@ -14,14 +14,13 @@ concurrency:
 
 env:
   NODE_VERSION: "22.18.0"
-  DNS_ORIGIN_IPV4: ${{ secrets.DNS_ORIGIN_IPV4 }}
-  DNS_LEGACY_IPV4: ${{ secrets.DNS_LEGACY_IPV4 }}
 
 jobs:
   audit:
     name: ops/dns-cutover
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    environment: production
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -34,6 +33,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Fetch and mask Doppler prd_ops secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_ops grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_ops
 
       - name: Audit delegation, resolver propagation, service DNS, and TLS
         run: npm run ops:dns-cutover -- --output .artifacts/dns-cutover-report.json
