@@ -1,0 +1,94 @@
+name: Production Health
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      capacity_diagnostics:
+        description: "Include sanitized read-only capacity diagnostics"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: production-health
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  NODE_VERSION: "22.18.0"
+
+jobs:
+  audit:
+    name: ops/production-health
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: production
+    env:
+      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PUBLIC_BASE_URL: https://sismosmart.com
+      PRODUCTION_HEALTH_OUTPUT: .artifacts/production-health.json
+      PRODUCTION_HEALTH_CAPACITY_DIAGNOSTICS: ${{ github.event_name == 'workflow_dispatch' && inputs.capacity_diagnostics || false }}
+      REMOTE_APP_DOMAIN: ${{ secrets.REMOTE_APP_DOMAIN || secrets.DOMAIN }}
+      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
+      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
+      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
+      REMOTE_PUBLIC_ROOT: ${{ secrets.REMOTE_PUBLIC_ROOT || 'public_html' }}
+      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Validate required read-only audit secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in DOMAIN SSH_HOST SSH_PORT SSH_USER; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
+            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required production health secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run production health audit
+        run: npm run ops:production-health
+
+      - name: Upload production health report
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: production-health-${{ github.run_id }}
+          path: .artifacts/production-health.json
+          if-no-files-found: warn
+          retention-days: 14

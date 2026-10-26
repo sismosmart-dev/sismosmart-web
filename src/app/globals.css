@@ -1,0 +1,501 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+
+   The palette is built around one primary green (--primary-600, the colour the
+   site already used everywhere as a raw hex) plus a brighter "signal" green
+   reserved for live readings: LEDs, waveforms, active states. Signal green is
+   never used for ordinary chrome, so that when something on the page glows, it
+   means the device is saying something.
+--------------------------------------------------------------------------- */
+
+:root {
+  --primary-50: #eef7ef;
+  --primary-100: #d5ebd7;
+  --primary-200: #add7b1;
+  --primary-300: #7ebd85;
+  --primary-400: #529e5b;
+  --primary-500: #3a8c40;
+  --primary-600: #2e7d32;
+  --primary-700: #25692a;
+  --primary-800: #1b5e20;
+  --primary-900: #123f16;
+  --primary-950: #0b1f1a;
+
+  /* Live signal. Reserved for real readings and active device state. */
+  --signal: #33d17a;
+  --signal-soft: rgba(51, 209, 122, 0.24);
+
+  --amber: #f59e0b;
+  --danger: #dc2626;
+
+  /* Semantic surfaces */
+  --bg: #f7faf7;
+  --bg-grid: rgba(11, 31, 26, 0.035);
+  --surface: #ffffff;
+  --surface-2: #f2f7f2;
+  --surface-inverse: #0b1f1a;
+  --border: rgba(11, 31, 26, 0.1);
+  --border-strong: rgba(11, 31, 26, 0.18);
+
+  --fg: #0b1f1a;
+  --fg-muted: #475467;
+  --fg-subtle: #667085;
+  --fg-inverse: #ffffff;
+  --fg-on-primary: #ffffff;
+
+  /* Radius scale */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2.25rem;
+
+  /* Elevation. Tinted with the ink colour rather than pure black so cards sit
+     on the page instead of floating above a different one. */
+  --shadow-1: 0 1px 2px rgba(11, 31, 26, 0.06);
+  --shadow-2: 0 8px 20px rgba(11, 31, 26, 0.06);
+  --shadow-3: 0 16px 34px rgba(11, 31, 26, 0.08);
+  --shadow-4: 0 28px 60px rgba(11, 31, 26, 0.14);
+  --shadow-inverse: 0 24px 56px rgba(0, 0, 0, 0.34);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #071410;
+  --bg-grid: rgba(121, 220, 131, 0.05);
+  --surface: #0e211a;
+  --surface-2: #0a1a15;
+  --surface-inverse: #061410;
+  --border: rgba(121, 220, 131, 0.14);
+  --border-strong: rgba(121, 220, 131, 0.26);
+
+  --fg: #eaf5ec;
+  --fg-muted: #9db4a4;
+  --fg-subtle: #7d9385;
+  --fg-inverse: #071410;
+
+  /* On a dark page the mid green loses contrast against the surface, so the
+     interactive primary moves up the scale. */
+  --primary-600: #45a24c;
+  --primary-700: #52a65d;
+  --primary-800: #7ebd85;
+  --fg-on-primary: #051009;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 20px rgba(0, 0, 0, 0.36);
+  --shadow-3: 0 16px 34px rgba(0, 0, 0, 0.44);
+  --shadow-4: 0 28px 60px rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #071410;
+    --bg-grid: rgba(121, 220, 131, 0.05);
+    --surface: #0e211a;
+    --surface-2: #0a1a15;
+    --surface-inverse: #061410;
+    --border: rgba(121, 220, 131, 0.14);
+    --border-strong: rgba(121, 220, 131, 0.26);
+
+    --fg: #eaf5ec;
+    --fg-muted: #9db4a4;
+    --fg-subtle: #7d9385;
+    --fg-inverse: #071410;
+
+    --primary-600: #45a24c;
+    --primary-700: #52a65d;
+    --primary-800: #7ebd85;
+    --fg-on-primary: #051009;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 8px 20px rgba(0, 0, 0, 0.36);
+    --shadow-3: 0 16px 34px rgba(0, 0, 0, 0.44);
+    --shadow-4: 0 28px 60px rgba(0, 0, 0, 0.55);
+
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+
+  --color-signal: var(--signal);
+  --color-amber: var(--amber);
+  --color-danger: var(--danger);
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-inverse: var(--fg-inverse);
+  --color-fg-on-primary: var(--fg-on-primary);
+
+  /* Kept so existing `brand` / `foreground` utilities keep resolving while the
+     redesign lands page by page. */
+  --color-brand: var(--primary-950);
+  --color-brand-bright: var(--signal);
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-text-muted: var(--fg-muted);
+  --color-text-subtle: var(--fg-subtle);
+  --color-card-border: var(--border);
+  --color-surface-strong: var(--surface-inverse);
+  --color-surface-soft: var(--surface-2);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-4: var(--shadow-4);
+
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body), system-ui, sans-serif;
+  background-image:
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+/* One focus ring for the whole site. Before this, three different forms each
+   defined their own colour. */
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary-600);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: var(--signal-soft);
+  color: var(--fg);
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 60;
+  transform: translateY(-180%);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 760px;
+}
+
+/* Scroll reveal. Elements marked [data-reveal] start slightly lowered and
+   fade in when an IntersectionObserver adds .is-visible. The starting state is
+   only applied once the script has confirmed support (html.js-reveal), so with
+   JS disabled the content is visible from the first frame. */
+.js-reveal [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 620ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.js-reveal [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.grid-glow {
+  position: relative;
+}
+
+.grid-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(121, 220, 131, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(121, 220, 131, 0.08) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 1), transparent 92%);
+  pointer-events: none;
+}
+
+.seismic-line {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 8%,
+    rgba(121, 220, 131, 0.35) 18%,
+    rgba(121, 220, 131, 0.92) 34%,
+    rgba(121, 220, 131, 0.4) 44%,
+    transparent 58%,
+    rgba(121, 220, 131, 0.55) 70%,
+    transparent 92%
+  );
+  background-size: 220% 100%;
+  animation: seismic-shift 7s linear infinite;
+}
+
+.status-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.product-panel .status-pill {
+  color: rgba(236, 253, 245, 0.78);
+  border-color: rgba(114, 174, 127, 0.26);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* The dark instrument panel is intentionally dark in both themes: it is meant
+   to read as the device's own screen, not as page chrome. */
+.product-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(114, 174, 127, 0.2);
+  background:
+    linear-gradient(145deg, rgba(20, 56, 44, 0.96), rgba(4, 16, 13, 0.94)),
+    linear-gradient(180deg, rgba(51, 209, 122, 0.12), transparent 32%);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-inverse);
+}
+
+.product-panel--compact {
+  padding: 1.25rem;
+}
+
+.product-panel__header {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 1rem;
+}
+
+.product-panel__visual {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 22rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.product-panel__halo {
+  position: absolute;
+  inset: 20% 8% 6%;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(121, 220, 131, 0.28), transparent 68%);
+  filter: blur(10px);
+}
+
+.product-panel__image {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 19rem);
+  height: auto;
+  transform: translateY(0.25rem);
+  filter: drop-shadow(0 34px 54px rgba(0, 0, 0, 0.42));
+}
+
+.product-panel--compact .product-panel__halo {
+  filter: none;
+}
+
+.product-panel--compact .product-panel__image {
+  transform: none;
+  filter: none;
+}
+
+.product-panel--compact .product-panel__meter {
+  background: rgba(5, 15, 10, 0.9);
+  backdrop-filter: none;
+}
+
+.product-panel__meter {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid rgba(114, 174, 127, 0.2);
+  border-radius: var(--radius-md);
+  background: rgba(5, 15, 10, 0.76);
+  backdrop-filter: blur(10px);
+  padding: 0.85rem 1rem;
+}
+
+.product-panel__meter span {
+  font-size: 0.7rem;
+  line-height: 1;
+  text-transform: uppercase;
+  color: rgba(236, 253, 245, 0.72);
+}
+
+.product-panel__meter strong {
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: #ffffff;
+}
+
+.product-panel__meter--top {
+  top: 1.25rem;
+  right: 0;
+}
+
+.product-panel__meter--bottom {
+  bottom: 1.75rem;
+  left: 0;
+}
+
+.device-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(114, 174, 127, 0.2);
+  background:
+    radial-gradient(circle at top, rgba(121, 220, 131, 0.16), transparent 38%),
+    linear-gradient(160deg, rgba(7, 21, 13, 0.96), rgba(5, 14, 9, 0.9));
+  padding: 1.75rem;
+  box-shadow: var(--shadow-inverse);
+}
+
+.signal-card {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(114, 174, 127, 0.18);
+  background: rgba(0, 0, 0, 0.16);
+  padding: 0.95rem 1rem;
+  color: #ffffff;
+}
+
+.signal-preview {
+  display: grid;
+  gap: 1rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(114, 174, 127, 0.22);
+  background: rgba(0, 0, 0, 0.14);
+  padding: 1.25rem;
+}
+
+.signal-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+@keyframes seismic-shift {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 220% 0%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .seismic-line {
+    animation: none;
+  }
+
+  .js-reveal [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .product-panel__visual {
+    min-height: 18rem;
+  }
+
+  .product-panel__meter {
+    position: static;
+    margin-top: 0.75rem;
+  }
+}

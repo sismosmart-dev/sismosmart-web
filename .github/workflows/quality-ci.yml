@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "fix/**"
+      - "chore/**"
+      - "release/**"
+      - "oaslananka/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22.18.0"
+  NEXT_PUBLIC_ANALYTICS_ENABLED: "true"
+  NEXT_PUBLIC_CLARITY_ID: ${{ vars.NEXT_PUBLIC_CLARITY_ID }}
+  NEXT_PUBLIC_GA_ID: ${{ vars.NEXT_PUBLIC_GA_ID }}
+  NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
+
+jobs:
+  lint:
+    name: ci/lint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript check
+        run: npm run typecheck
+
+  test:
+    name: ci/test
+    runs-on: ubuntu-24.04
+    needs: lint
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+  browser:
+    name: ci/browser
+    runs-on: ubuntu-24.04
+    needs:
+      - lint
+      - test
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_ANALYTICS_ENABLED: "true"
+      NEXT_PUBLIC_CLARITY_ID: BROWSERTEST
+      NEXT_PUBLIC_GA_ID: G-BROWSERTEST
+      NEXT_PUBLIC_GTM_ID: GTM-BROWSERTEST
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install pinned browser
+        run: |
+          npm run browser:install
+          sudo ./node_modules/.bin/browsers install chrome-headless-shell@150.0.7871.24 --path "$PWD/.cache/puppeteer" --install-deps
+
+      - name: Build browser test application
+        run: npm run build
+
+      - name: Run browser and accessibility checks
+        run: npm run test:browser
+
+      - name: Upload browser failure evidence
+        if: ${{ failure() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: browser-quality-failure-${{ github.sha }}
+          path: .artifacts/browser-quality
+          if-no-files-found: warn
+          retention-days: 3
+
+  build:
+    name: ci/build
+    runs-on: ubuntu-24.04
+    needs:
+      - lint
+      - test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Prepare standalone deploy bundle
+        run: npm run deploy:prepare
+
+      - name: Smoke-test standalone runtime
+        run: npm run deploy:smoke
+
+      - name: Verify build output
+        run: |
+          test -d .next/standalone
+          test -f .deploy/standalone/app.js
+          test -d .deploy/standalone/.next/static
+          test -d .deploy/standalone/public
+          du -sh .next .deploy/standalone
+
+      - name: Upload standalone artifact
+        if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: sismosmart-standalone-${{ github.sha }}
+          path: .deploy/standalone
+          if-no-files-found: error
+          retention-days: 3

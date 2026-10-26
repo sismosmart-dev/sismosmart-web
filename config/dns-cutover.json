@@ -1,0 +1,84 @@
+{
+  "domain": "sismosmart.com",
+  "rdapUrl": "https://rdap.verisign.com/com/v1/domain/sismosmart.com",
+  "cloudflareIpv4RangesUrl": "https://www.cloudflare.com/ips-v4",
+  "expectedNameservers": [
+    "dane.ns.cloudflare.com",
+    "ryleigh.ns.cloudflare.com"
+  ],
+  "publicResolvers": [
+    {
+      "name": "cloudflare",
+      "server": "1.1.1.1"
+    },
+    {
+      "name": "google",
+      "server": "8.8.8.8"
+    },
+    {
+      "name": "quad9",
+      "server": "9.9.9.9"
+    }
+  ],
+  "legacyNameservers": [
+    "dns1.hostingdunyam.net",
+    "dns2.hostingdunyam.net"
+  ],
+  "serviceHosts": [
+    "mail",
+    "cpanel",
+    "webmail",
+    "autodiscover",
+    "autoconfig",
+    "ftp",
+    "webdisk",
+    "whm",
+    "cpcontacts",
+    "cpcalendars"
+  ],
+  "httpsChecks": [
+    {
+      "hostname": "sismosmart.com",
+      "port": 443,
+      "path": "/",
+      "allowedStatuses": [
+        200,
+        307,
+        308
+      ]
+    },
+    {
+      "hostname": "www.sismosmart.com",
+      "port": 443,
+      "path": "/",
+      "allowedStatuses": [
+        301,
+        302,
+        307,
+        308
+      ]
+    },
+    {
+      "hostname": "cpanel.sismosmart.com",
+      "port": 2083,
+      "path": "/",
+      "allowedStatuses": [
+        200
+      ]
+    },
+    {
+      "hostname": "webmail.sismosmart.com",
+      "port": 2096,
+      "path": "/",
+      "allowedStatuses": [
+        200
+      ]
+    }
+  ],
+  "tlsChecks": [
+    {
+      "hostname": "mail.sismosmart.com",
+      "port": 993
+    }
+  ]
+}

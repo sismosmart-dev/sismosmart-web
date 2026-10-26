@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: release/github
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog entry
+        run: |
+          current_tag="${GITHUB_REF_NAME}"
+          previous_tag="$(git describe --tags --abbrev=0 "${current_tag}^" 2>/dev/null || true)"
+
+          {
+            echo "# Changelog - ${current_tag}"
+            echo
+            echo "Date: $(date -u '+%Y-%m-%d')"
+            echo
+            if [ -n "${previous_tag}" ]; then
+              echo "## Changes since ${previous_tag}"
+              git log "${previous_tag}..${current_tag}" --pretty=format:"- %s (%h)"
+            else
+              echo "## Initial release"
+              git log "${current_tag}" --pretty=format:"- %s (%h)"
+            fi
+            echo
+          } > CHANGELOG_ENTRY.md
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
+        with:
+          body_path: CHANGELOG_ENTRY.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          generate_release_notes: true

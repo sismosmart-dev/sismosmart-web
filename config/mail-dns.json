@@ -1,0 +1,39 @@
+{
+  "domain": "sismosmart.com",
+  "publicResolvers": [
+    {
+      "name": "cloudflare",
+      "server": "1.1.1.1"
+    },
+    {
+      "name": "google",
+      "server": "8.8.8.8"
+    },
+    {
+      "name": "quad9",
+      "server": "9.9.9.9"
+    }
+  ],
+  "mx": {
+    "exchange": "mail.sismosmart.com",
+    "priority": 0
+  },
+  "spf": {
+    "requiredInclude": "include:relay.mailbaby.net",
+    "requiredTerminal": "-all"
+  },
+  "dkim": {
+    "selector": "default",
+    "minimumRsaBits": 2048
+  },
+  "dmarc": {
+    "reportMailbox": "info@sismosmart.com",
+    "minimumPolicy": "none",
+    "expectedPercentage": "100"
+  },
+  "smtp": {
+    "hostname": "mail.sismosmart.com",
+    "implicitTlsPort": 465,
+    "startTlsPort": 587
+  }
+}

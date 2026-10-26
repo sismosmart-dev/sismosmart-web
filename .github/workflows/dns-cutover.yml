@@ -1,0 +1,49 @@
+name: DNS Cutover Audit
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dns-cutover-audit
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22.18.0"
+  DNS_ORIGIN_IPV4: ${{ secrets.DNS_ORIGIN_IPV4 }}
+  DNS_LEGACY_IPV4: ${{ secrets.DNS_LEGACY_IPV4 }}
+
+jobs:
+  audit:
+    name: ops/dns-cutover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit delegation, resolver propagation, service DNS, and TLS
+        run: npm run ops:dns-cutover -- --output .artifacts/dns-cutover-report.json
+
+      - name: Upload DNS cutover report
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: dns-cutover-${{ github.run_id }}
+          path: .artifacts/dns-cutover-report.json
+          if-no-files-found: error
+          retention-days: 14

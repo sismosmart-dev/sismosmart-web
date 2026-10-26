@@ -1,0 +1,10 @@
+{
+  "name": "node-domexception",
+  "version": "1.0.1",
+  "description": "Compatibility wrapper around the native DOMException available in supported Node.js runtimes.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

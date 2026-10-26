@@ -1,0 +1,95 @@
+{
+  "dependencies": {
+    "@sentry/nextjs": "^10.76.2",
+    "brace-expansion": "file:vendor/brace-expansion-compat",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@puppeteer/browsers": "3.0.6",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "axe-core": "4.11.4",
+    "braces": "file:vendor/braces-compat",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.4.2",
+    "googleapis": "^172.0.0",
+    "node-domexception": "file:vendor/node-domexception",
+    "puppeteer-core": "25.3.0",
+    "ssh2": "^1.17.0",
+    "ssh2-sftp-client": "^12.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6"
+  },
+  "name": "sismosmart-web",
+  "engines": {
+    "node": ">=22.13.0 <27"
+  },
+  "overrides": {
+    "braces": "$braces",
+    "postcss": "8.5.23",
+    "fast-uri": "3.1.8",
+    "source-map-js": "1.2.2",
+    "minimatch": {
+      "brace-expansion": "$brace-expansion"
+    }
+  },
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "deploy:prepare": "node scripts/deploy/prepare-standalone.mjs",
+    "deploy:register": "node scripts/deploy/register-node-app.mjs",
+    "deploy:rollback": "node scripts/deploy/rollback.mjs",
+    "deploy:server": "node scripts/deploy/deploy-server.mjs",
+    "deploy:status": "node scripts/deploy/status.mjs",
+    "dev": "next dev",
+    "lint": "eslint",
+    "ops:clarity": "node scripts/ops/clarity.mjs",
+    "ops:ga": "node scripts/ops/google-analytics.mjs",
+    "ops:google-auth": "node scripts/ops/google-oauth.mjs",
+    "ops:gtm": "node scripts/ops/google-tag-manager.mjs",
+    "ops:search-console": "node scripts/ops/search-console.mjs",
+    "ops:status": "node scripts/ops/status.mjs",
+    "start": "next start",
+    "test": "node --import ./tests/alias-loader.mjs --test tests/repository-contract.test.mjs tests/doppler-contract.test.mjs tests/dependency-security.test.mjs tests/github-only-automation.test.mjs tests/mainline-policy.test.mjs tests/forms-validation.test.mjs tests/deploy-artifact.test.mjs tests/deploy-transaction.test.mjs tests/deploy-control-path.test.mjs tests/release-retention.test.mjs tests/dns-cutover.test.mjs tests/analytics-observability.test.mjs tests/analytics-admin-audit.test.mjs tests/mail-dns.test.mjs tests/ops-network-config.test.mjs tests/google-oauth.test.mjs tests/agent-readiness.test.mjs tests/agent-discovery.test.mjs tests/agent-negotiation.test.mjs tests/guide-content.test.mjs tests/guide-routing.test.mjs tests/search-console-performance.test.mjs tests/localized-page-modularization.test.mjs tests/page-content-modularization.test.mjs tests/production-health-probes.test.mjs tests/production-health-resolution.test.mjs tests/production-health-inspection.test.mjs tests/production-health-cpanel.test.mjs tests/production-health-workflows.test.mjs tests/production-health-aggregation.test.mjs tests/production-health.test.mjs tests/production-health-report.test.mjs tests/browser-quality-executable.test.mjs tests/browser-quality-forms.test.mjs tests/browser-quality-interactions.test.mjs tests/browser-quality-page.test.mjs tests/browser-quality-server.test.mjs tests/browser-quality.test.mjs tests/browser-quality-report.test.mjs tests/seo-governance.test.mjs tests/forms-forwarding.test.mjs",
+    "test:coverage": "node --import ./tests/alias-loader.mjs --test --experimental-test-coverage tests/repository-contract.test.mjs tests/doppler-contract.test.mjs tests/dependency-security.test.mjs tests/github-only-automation.test.mjs tests/mainline-policy.test.mjs tests/forms-validation.test.mjs tests/deploy-artifact.test.mjs tests/deploy-transaction.test.mjs tests/deploy-control-path.test.mjs tests/release-retention.test.mjs tests/dns-cutover.test.mjs tests/analytics-observability.test.mjs tests/analytics-admin-audit.test.mjs tests/mail-dns.test.mjs tests/ops-network-config.test.mjs tests/google-oauth.test.mjs tests/agent-readiness.test.mjs tests/agent-discovery.test.mjs tests/agent-negotiation.test.mjs tests/guide-content.test.mjs tests/guide-routing.test.mjs tests/search-console-performance.test.mjs tests/localized-page-modularization.test.mjs tests/page-content-modularization.test.mjs tests/production-health-probes.test.mjs tests/production-health-resolution.test.mjs tests/production-health-inspection.test.mjs tests/production-health-cpanel.test.mjs tests/production-health-workflows.test.mjs tests/production-health-aggregation.test.mjs tests/production-health.test.mjs tests/production-health-report.test.mjs tests/browser-quality-executable.test.mjs tests/browser-quality-forms.test.mjs tests/browser-quality-interactions.test.mjs tests/browser-quality-page.test.mjs tests/browser-quality-server.test.mjs tests/browser-quality.test.mjs tests/browser-quality-report.test.mjs tests/seo-governance.test.mjs tests/forms-forwarding.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "verify:post-deploy": "bash scripts/post-deploy-verify.sh",
+    "deploy:permissions": "node scripts/deploy/permissions.mjs",
+    "deploy:runtime-env": "node scripts/deploy/runtime-env.mjs",
+    "deploy:validate": "node scripts/deploy/deploy-server.mjs --validate",
+    "deploy:releases": "node scripts/deploy/releases.mjs",
+    "ops:dns-cutover": "node scripts/ops/dns-cutover.mjs",
+    "ops:mail-dns": "node scripts/ops/mail-dns.mjs",
+    "ops:analytics-audit": "node scripts/ops/analytics-audit.mjs",
+    "ops:analytics-admin-audit": "node scripts/ops/analytics-admin-audit.mjs",
+    "deploy:smoke": "node scripts/deploy/smoke-standalone.mjs",
+    "deploy:reconcile": "node scripts/deploy/reconcile-production.mjs",
+    "ops:production-health": "node scripts/ops/production-health.mjs",
+    "browser:install": "browsers install chrome-headless-shell@150.0.7871.24 --path .cache/puppeteer",
+    "test:browser": "node scripts/test/browser-quality.mjs",
+    "doppler:check": "node scripts/ops/validate-doppler-contract.mjs",
+    "doppler:ci": "node scripts/doppler/run.mjs ci -- npm run verify:ci",
+    "doppler:ops:status": "node scripts/doppler/run.mjs prd_ops -- npm run ops:status",
+    "doppler:deploy:validate": "node scripts/doppler/run.mjs prd_deploy -- npm run deploy:validate",
+    "doppler:runtime-env": "node scripts/doppler/run.mjs prd_app -- npm run deploy:runtime-env",
+    "verify:ci": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "version": "0.1.2",
+  "type": "module",
+  "homepage": "https://sismosmart.com",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SismoSmart/sismosmart-web.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SismoSmart/sismosmart-web/issues"
+  }
+}

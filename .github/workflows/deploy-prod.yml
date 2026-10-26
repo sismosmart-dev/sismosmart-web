@@ -1,0 +1,507 @@
+name: Deploy Production
+run-name: Deploy Production / ${{ inputs.operation }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Production operation to run
+        required: true
+        default: deploy
+        type: choice
+        options:
+          - deploy
+          - validate-deploy
+          - status
+          - reconcile
+          - permissions
+          - retention
+          - forms
+      verify_form_delivery:
+        description: Send one controlled contact and waitlist test record
+        required: true
+        default: false
+        type: boolean
+      apply_retention:
+        description: Delete expired releases after showing the retention plan
+        required: true
+        default: false
+        type: boolean
+      expected_sha:
+        description: Exact current main commit SHA for deploy/validate-deploy
+        required: false
+        default: ""
+        type: string
+      confirmation:
+        description: Type deploy-production or validate-production
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  NODE_VERSION: "22.18.0"
+  NEXT_PUBLIC_ANALYTICS_ENABLED: "true"
+  NEXT_PUBLIC_CLARITY_ID: ${{ vars.NEXT_PUBLIC_CLARITY_ID }}
+  NEXT_PUBLIC_GA_ID: ${{ vars.NEXT_PUBLIC_GA_ID }}
+  NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
+
+jobs:
+  status:
+    name: status/production-read-only
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'status' }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://sismosmart.com
+    env:
+      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Validate required read-only status secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in SSH_HOST SSH_PORT SSH_USER; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
+            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required status secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read application status
+        run: npm run deploy:status
+
+      - name: Verify public routes without form delivery
+        env:
+          BASE_URL: https://sismosmart.com
+          VERIFY_FORM_DELIVERY: "false"
+          VERIFY_FORM_RUNTIME: "false"
+        run: bash scripts/post-deploy-verify.sh
+
+  reconcile:
+    name: reconcile/production-release
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'reconcile' }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://sismosmart.com
+    env:
+      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
+      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
+      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Validate required reconciliation secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in DOMAIN SSH_HOST SSH_PORT SSH_USER; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
+            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required reconciliation secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Inspect release pointers
+        run: node scripts/deploy/reconcile-production.mjs
+
+      - name: Reconcile current symlink
+        run: node scripts/deploy/reconcile-production.mjs --apply
+
+      - name: Verify Passenger application status
+        run: npm run deploy:status
+
+      - name: Verify production routes
+        env:
+          BASE_URL: https://sismosmart.com
+          VERIFY_FORM_RUNTIME: "false"
+        run: bash scripts/post-deploy-verify.sh
+
+  permissions:
+    name: permissions/production
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'permissions' }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://sismosmart.com
+    env:
+      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
+      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
+      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Validate required permission-repair secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in SSH_HOST SSH_PORT SSH_USER; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
+            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required permission-repair secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Inspect current permission policy
+        run: npm run deploy:permissions -- --all-releases
+
+      - name: Normalize all retained releases and public_html
+        run: npm run deploy:permissions -- --all-releases --apply
+
+      - name: Verify Passenger application status
+        run: npm run deploy:status
+
+      - name: Verify production routes
+        env:
+          BASE_URL: https://sismosmart.com
+          VERIFY_FORM_RUNTIME: "false"
+        run: bash scripts/post-deploy-verify.sh
+
+  retention:
+    name: retention/production-releases
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'retention' }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://sismosmart.com
+    env:
+      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      RELEASE_RETENTION_COUNT: ${{ vars.RELEASE_RETENTION_COUNT || '6' }}
+      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
+      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
+      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
+      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Validate required retention secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in DOMAIN SSH_HOST SSH_PORT SSH_USER; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
+            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required retention secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show release retention plan
+        run: npm run deploy:releases
+
+      - name: Apply reviewed release retention plan
+        if: ${{ inputs.apply_retention }}
+        run: npm run deploy:releases -- --apply
+
+      - name: Verify Passenger application status
+        run: npm run deploy:status
+
+      - name: Verify production routes
+        env:
+          BASE_URL: https://sismosmart.com
+          VERIFY_FORM_DELIVERY: "false"
+          VERIFY_FORM_RUNTIME: "false"
+        run: bash scripts/post-deploy-verify.sh
+
+  forms:
+    name: forms/production-runtime
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'forms' }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://sismosmart.com
+    env:
+      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      CONTACT_FORM_ENDPOINT: ${{ secrets.CONTACT_FORM_ENDPOINT }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      FORM_FORWARD_AUTH_TOKEN: ${{ secrets.FORM_FORWARD_AUTH_TOKEN }}
+      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
+      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      WAITLIST_FORM_ENDPOINT: ${{ secrets.WAITLIST_FORM_ENDPOINT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Validate form runtime inputs
+        shell: bash
+        run: |
+          missing=()
+          for name in CONTACT_FORM_ENDPOINT WAITLIST_FORM_ENDPOINT SSH_HOST SSH_PORT SSH_USER; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
+            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required form runtime inputs: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Inspect active runtime environment
+        run: npm run deploy:runtime-env
+
+      - name: Apply canonical form runtime environment
+        run: npm run deploy:runtime-env -- --apply
+
+      - name: Verify Passenger application status
+        run: npm run deploy:status
+
+      - name: Verify production and optional form delivery
+        env:
+          BASE_URL: https://sismosmart.com
+          FORM_TEST_EMAIL: sismosmart@gmail.com
+          FORM_TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+          VERIFY_FORM_DELIVERY: ${{ inputs.verify_form_delivery }}
+          VERIFY_FORM_RUNTIME: "false"
+        run: bash scripts/post-deploy-verify.sh
+
+  deploy:
+    name: deploy/production
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.operation == 'deploy' || inputs.operation == 'validate-deploy') }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://sismosmart.com
+    env:
+      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+      CPANEL_API_TOKEN_NAME: ${{ secrets.CPANEL_API_TOKEN_NAME }}
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      CONTACT_FORM_ENDPOINT: ${{ secrets.CONTACT_FORM_ENDPOINT }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      FORM_FORWARD_AUTH_TOKEN: ${{ secrets.FORM_FORWARD_AUTH_TOKEN }}
+      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
+      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
+      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
+      REMOTE_NODE_VERSION: ${{ secrets.REMOTE_NODE_VERSION || '22.18.0' }}
+      RELEASE_RETENTION_COUNT: ${{ vars.RELEASE_RETENTION_COUNT || '6' }}
+      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
+      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      WAITLIST_FORM_ENDPOINT: ${{ secrets.WAITLIST_FORM_ENDPOINT }}
+      WRITE_RUNTIME_ENV_FILE: "true"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Validate exact mainline release authorization
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          OPERATION: ${{ inputs.operation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Production deploy operations must run from main."
+            exit 1
+          fi
+          git fetch --no-tags --depth=1 origin main
+          current_main="$(git rev-parse origin/main)"
+          if [ "$GITHUB_SHA" != "$current_main" ] || [ "$EXPECTED_SHA" != "$current_main" ]; then
+            echo "::error::Stale or mismatched production SHA. expected=$current_main checkout=$GITHUB_SHA"
+            exit 1
+          fi
+          required_confirmation="validate-production"
+          if [ "$OPERATION" = "deploy" ]; then
+            required_confirmation="deploy-production"
+          fi
+          if [ "$CONFIRMATION" != "$required_confirmation" ]; then
+            echo "::error::Confirmation must equal $required_confirmation."
+            exit 1
+          fi
+          echo "Production release authorization accepted for $current_main ($OPERATION)."
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Validate required deployment secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in CONTACT_FORM_ENDPOINT DOMAIN SSH_HOST SSH_PORT SSH_USER WAITLIST_FORM_ENDPOINT; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ -z "${SSH_PRIVATE_KEY_BASE64:-}" ] && [ -z "${SSH_PASSWORD:-}" ]; then
+            missing+=("SSH_PRIVATE_KEY_BASE64 (preferred) or SSH_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required deployment secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run local quality gates
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run build
+          npm audit --audit-level=high
+
+      - name: Validate immutable artifact and isolated preflight
+        if: ${{ inputs.operation == 'validate-deploy' }}
+        run: npm run deploy:validate
+
+      - name: Deploy standalone app transactionally
+        if: ${{ inputs.operation == 'deploy' }}
+        run: npm run deploy:server
+
+      - name: Verify production
+        if: ${{ inputs.operation == 'deploy' }}
+        env:
+          BASE_URL: https://sismosmart.com
+          CONTACT_FORM_ENDPOINT: ${{ secrets.CONTACT_FORM_ENDPOINT }}
+          VERIFY_FORM_RUNTIME: "true"
+          WAITLIST_FORM_ENDPOINT: ${{ secrets.WAITLIST_FORM_ENDPOINT }}
+        run: bash scripts/post-deploy-verify.sh

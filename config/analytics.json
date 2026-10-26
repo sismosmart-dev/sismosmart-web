@@ -1,0 +1,33 @@
+{
+  "canonicalSource": "config/analytics.json",
+  "public": {
+    "gaMeasurementId": "G-Z79JVS9WMP",
+    "gtmPublicId": "GTM-5ML6JJXP",
+    "clarityProjectId": "w9qljyw73y"
+  },
+  "googleAnalytics": {
+    "accountId": "386259191",
+    "propertyId": "532515572",
+    "webStreamId": "14350456240",
+    "defaultUri": "https://sismosmart.com"
+  },
+  "googleTagManager": {
+    "accountId": "6349210271",
+    "containerId": "249043048",
+    "workspaceId": "5"
+  },
+  "searchConsole": {
+    "site": "sc-domain:sismosmart.com",
+    "sitemapUrl": "https://sismosmart.com/sitemap.xml"
+  },
+  "consent": {
+    "storageKey": "sismosmart_cookie_consent",
+    "defaultState": "denied",
+    "supportedChoices": ["accepted", "necessary"]
+  },
+  "events": {
+    "formSuccess": "sismosmart_form_success",
+    "audit": "sismosmart_analytics_audit"
+  },
+  "locales": ["en", "tr", "es", "id", "pt", "it"]
+}

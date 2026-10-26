@@ -1,0 +1,16 @@
+# Default owner for repository-wide changes.
+* @SismoSmart
+
+# CI/CD, deployment, and repository governance are production-critical.
+.github/** @SismoSmart
+scripts/** @SismoSmart
+docs/** @SismoSmart
+SECURITY.md @SismoSmart
+CONTRIBUTING.md @SismoSmart
+renovate.json @SismoSmart
+package.json @SismoSmart
+package-lock.json @SismoSmart
+
+# Public app source and assets.
+src/** @SismoSmart
+public/** @SismoSmart

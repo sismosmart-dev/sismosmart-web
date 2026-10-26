@@ -1,0 +1,14 @@
+{
+  "name": "braces",
+  "version": "3.0.4-sismosmart.1",
+  "private": true,
+  "description": "Local compatibility wrapper that serves the braces API used by micromatch and fast-glob from the patched brace-expansion line. braces <=3.0.3 has no upstream fix for GHSA-vfj7-8cjw-p6xm.",
+  "main": "index.js",
+  "license": "MIT",
+  "engines": {
+    "node": "20 || >=22"
+  },
+  "dependencies": {
+    "brace-expansion-upstream": "npm:brace-expansion@5.0.12"
+  }
+}
