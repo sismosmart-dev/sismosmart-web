@@ -25,19 +25,19 @@ Production never deploys automatically from a push. `Deploy Production` is manua
 - run from `main`;
 - provide the exact current `main` SHA;
 - use the documented operation confirmation phrase;
-- satisfy the `production` environment branch policy, which currently allows deployment only from `main`;
+- satisfy the write-capable `production-deploy` environment branch policy, which allows only `main`, and the owner-required deployment review;
 - use the scoped private-key credential or the explicitly configured password fallback;
 - preserve transactional activation and automatic rollback.
 
 ## Production environment approval boundary
 
-The `production` environment is shared by mutation deploy jobs and scheduled/read-only Production Health jobs. Required-reviewer gating is not enabled on this shared environment, because it would also block unattended health monitoring.
+The `production` environment is reserved for unattended read-only Production Health, analytics observability, and manual `status`. It is restricted to `main` without required reviewers, so scheduled health does not wait for an operator. Those jobs use separately provisioned `OPS_` prefixed SSH and cPanel secret names, distinct from deploy credentials. The analytics Doppler `DOPPLER_TOKEN_PRD_OPS` secret must be provisioned only to the read-only `production` environment, not as an unscoped repository secret.
 
-Current enforced controls are the main-only environment deployment policy, exact-SHA input, operation-specific confirmation, protected `main`, required repository checks, scoped credentials, transactional activation and rollback. If mandatory human approval for every production mutation is required, create a deploy-only environment or equivalent secret/workflow split before enabling required reviewers. Do not re-enable reviewer gating on the shared environment and silently break scheduled monitoring.
+Every mutation-capable `Deploy Production` job (`reconcile`, `permissions`, `retention`, `forms`, `deploy` including `validate-deploy`) uses the separate `production-deploy` environment, restricted to `main` and requiring approval from the verified owner. A deployment run must also satisfy exact-SHA authorization, operation-specific confirmation, protected `main`, required checks and rollback controls. This approval gate must never be placed on the shared read-only `production` environment.
 
 ## Secret isolation
 
-Production deployment credentials are scoped to the GitHub production environment and the approved Doppler configuration. The complete private key is stored as one protected secret and injected only into the job that requires it. Read-only audit credentials must not be reused for deployment mutations. Secret values must never be logged, copied into issues, or committed.
+Deployment credentials are scoped exclusively to the GitHub `production-deploy` environment and an appropriately restricted `prd_deploy` Doppler grant. Read-only monitoring uses only the `production` environment, `OPS_` prefixed SSH/cPanel credentials, and a read-only `prd_ops` Doppler grant. The `OPS_` prefix is an explicit provisioning boundary, **not proof** that a copied SSH key or provider token has read-only permissions: independently verify the host account, authorized commands and provider scopes before setting any secret. Never copy the same write-capable key into both environments. The complete private key is stored as one protected environment secret and injected only into its authorized job. Read-only audit credentials must not be reused for deployment mutations. Secret values must never be logged, copied into issues, or committed.
 
 ## Required checks
 
@@ -74,9 +74,9 @@ operating model, and strict status checks (`ci/lint`, `ci/test`, `ci/browser`,
 require `governance/pr-origin` on PRs because that check runs after merges on
 `main`, not on normal pull requests.
 
-The `production` environment now has an explicit deployment-branch allowlist
-containing only `main`, which is protected by `main-standard`; it currently
-contains no migrated secrets. Deploy and scheduled production jobs remain
+Both `production` and `production-deploy` environments have explicit
+main-only deployment-branch allowlists; only `production-deploy` requires
+manual owner review. Both currently contain no migrated secrets. Deploy and scheduled production jobs remain
 disabled in this repository until credentials, rollback, and monitoring pass
 acceptance; the legacy repository remains the active production controller.
 

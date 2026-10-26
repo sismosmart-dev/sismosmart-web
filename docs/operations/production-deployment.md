@@ -2,7 +2,7 @@
 
 ## Safety model
 
-Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically.
+Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the read-only `status` operation uses a separate `production` environment. Neither environment currently contains migrated secrets.
 
 Use the workflow operations in this order:
 
