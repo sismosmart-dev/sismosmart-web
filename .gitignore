@@ -51,4 +51,3 @@ next-env.d.ts
 TEMP_FOLDER/
 TEMP_FOLDER.zip
 .claude/*
-docs/content-style-guide.md

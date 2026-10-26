@@ -55,7 +55,7 @@ Use the repository Conventional Commit types:
 feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert
 ```
 
-Commits and pull requests must use the canonical `SismoSmart/sismosmart-web` identity.
+Commits and pull requests must use the canonical `sismosmart-dev/sismosmart-web` identity.
 
 ## Deployment
 
