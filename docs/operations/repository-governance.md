@@ -56,3 +56,19 @@ At least two trusted organization owners or repository administrators should exi
 - Maintenance roles, secret rotation, incident response, and archive retention are defined in `maintenance-ownership.md`.
 - High-impact technical and product wording is governed by `../governance/technical-claims-register.md`.
 - Historical audit snapshots under `../archive/` describe past state and must not be treated as current operational truth without revalidation.
+
+## Private Free repository scanning limitation
+
+On GitHub Free with a private organization repository, the built-in CodeQL
+code-scanning integration and private-repository branch protection cannot
+be treated as enabled. The Security workflow runs an independent **Semgrep
+OSS** job with pinned, repository-local security patterns, no telemetry, and
+no runtime network access. Its status is a real CI security signal, but the
+small local ruleset is **not** equivalent to GitHub CodeQL or a full SAST
+coverage claim. The CodeQL job is skipped when the repository is private and
+`ENABLE_CODEQL` is not enabled, instead of succeeding without analysis.
+
+Production cutover remains blocked until actual repository protection, code
+scanning/approvals, and protected production credentials are verified under
+a supported GitHub plan/visibility setting. Do not publish the repository or
+start a billable plan merely to work around this limit.

@@ -56,7 +56,29 @@ jobs:
             zricethezav/gitleaks:v8.28.0 \
             detect --source /repo --redact --verbose
 
+
+  semgrep:
+    name: security/semgrep
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+
+      - name: Scan locally with Semgrep OSS rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --network=none \
+            -e SEMGREP_SEND_METRICS=off \
+            -v "${PWD}:/src:ro" -w /src \
+            semgrep/semgrep@sha256:81474464c1f07483ba0682a44787fd93c91397419762a04abe2bafaae396304b \
+            semgrep scan --config .semgrep/security.yml --strict --error --metrics=off .
+
   codeql:
+    # A disabled GitHub Code Security license must not produce a green fake analysis.
+    if: ${{ github.event.repository.private == false || vars.ENABLE_CODEQL == 'true' }}
     name: security/codeql
     runs-on: ubuntu-24.04
     permissions:
@@ -64,25 +86,16 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Explain CodeQL availability
-        if: ${{ github.event.repository.private && vars.ENABLE_CODEQL != 'true' }}
-        run: |
-          echo "::notice title=CodeQL unavailable::GitHub Advanced Security is not enabled for this private repository. Set repository variable ENABLE_CODEQL=true only after code scanning is enabled."
-
       - name: Checkout repository
-        if: ${{ github.event.repository.private == false || vars.ENABLE_CODEQL == 'true' }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
 
       - name: Initialize CodeQL
-        if: ${{ github.event.repository.private == false || vars.ENABLE_CODEQL == 'true' }}
         uses: github/codeql-action/init@87557b9c84dde89fdd9b10e88954ac2f4248e463  # v4
         with:
           languages: javascript-typescript
 
       - name: Autobuild
-        if: ${{ github.event.repository.private == false || vars.ENABLE_CODEQL == 'true' }}
         uses: github/codeql-action/autobuild@87557b9c84dde89fdd9b10e88954ac2f4248e463  # v4
 
       - name: Analyze
-        if: ${{ github.event.repository.private == false || vars.ENABLE_CODEQL == 'true' }}
         uses: github/codeql-action/analyze@87557b9c84dde89fdd9b10e88954ac2f4248e463  # v4
