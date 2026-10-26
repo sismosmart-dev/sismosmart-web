@@ -61,17 +61,6 @@ jobs:
     environment:
       name: production
       url: https://sismosmart.com
-    env:
-      CPANEL_API_TOKEN: ${{ secrets.OPS_CPANEL_API_TOKEN }}
-      CPANEL_HOST: ${{ secrets.OPS_CPANEL_HOST }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
-      SSH_HOST: ${{ secrets.OPS_SSH_HOST }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.OPS_SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.OPS_SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_PASSWORD: ${{ secrets.OPS_SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.OPS_SSH_PORT }}
-      SSH_USER: ${{ secrets.OPS_SSH_USER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -81,6 +70,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and mask Doppler prd_ops secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_OPS }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_ops grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_ops
 
       - name: Validate required read-only status secrets
         shell: bash
@@ -101,9 +102,6 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Read application status
         run: npm run deploy:status
 
@@ -121,19 +119,6 @@ jobs:
     environment:
       name: production-deploy
       url: https://sismosmart.com
-    env:
-      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
-      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
-      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_USER: ${{ secrets.SSH_USER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -143,6 +128,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and mask Doppler prd_deploy secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_deploy grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
 
       - name: Validate required reconciliation secrets
         shell: bash
@@ -162,9 +159,6 @@ jobs:
             printf 'Missing required reconciliation secrets: %s\n' "${missing[*]}"
             exit 1
           fi
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Inspect release pointers
         run: node scripts/deploy/reconcile-production.mjs
@@ -188,19 +182,6 @@ jobs:
     environment:
       name: production-deploy
       url: https://sismosmart.com
-    env:
-      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
-      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
-      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_USER: ${{ secrets.SSH_USER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -210,6 +191,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and mask Doppler prd_deploy secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_deploy grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
 
       - name: Validate required permission-repair secrets
         shell: bash
@@ -229,9 +222,6 @@ jobs:
             printf 'Missing required permission-repair secrets: %s\n' "${missing[*]}"
             exit 1
           fi
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Inspect current permission policy
         run: npm run deploy:permissions -- --all-releases
@@ -255,21 +245,6 @@ jobs:
     environment:
       name: production-deploy
       url: https://sismosmart.com
-    env:
-      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      RELEASE_RETENTION_COUNT: ${{ vars.RELEASE_RETENTION_COUNT || '6' }}
-      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
-      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
-      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
-      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_USER: ${{ secrets.SSH_USER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -279,6 +254,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and mask Doppler prd_deploy secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_deploy grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
 
       - name: Validate required retention secrets
         shell: bash
@@ -298,9 +285,6 @@ jobs:
             printf 'Missing required retention secrets: %s\n' "${missing[*]}"
             exit 1
           fi
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Show release retention plan
         run: npm run deploy:releases
@@ -326,22 +310,6 @@ jobs:
     environment:
       name: production-deploy
       url: https://sismosmart.com
-    env:
-      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
-      CONTACT_FORM_ENDPOINT: ${{ secrets.CONTACT_FORM_ENDPOINT }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      FORM_FORWARD_AUTH_TOKEN: ${{ secrets.FORM_FORWARD_AUTH_TOKEN }}
-      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
-      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
-      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_USER: ${{ secrets.SSH_USER }}
-      WAITLIST_FORM_ENDPOINT: ${{ secrets.WAITLIST_FORM_ENDPOINT }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -351,6 +319,27 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and mask Doppler prd_deploy secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_deploy grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
+
+      - name: Fetch and mask Doppler prd_app secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_APP }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_app grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_app
 
       - name: Validate form runtime inputs
         shell: bash
@@ -370,9 +359,6 @@ jobs:
             printf 'Missing required form runtime inputs: %s\n' "${missing[*]}"
             exit 1
           fi
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Inspect active runtime environment
         run: npm run deploy:runtime-env
@@ -399,28 +385,6 @@ jobs:
     environment:
       name: production-deploy
       url: https://sismosmart.com
-    env:
-      CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-      CPANEL_API_TOKEN_NAME: ${{ secrets.CPANEL_API_TOKEN_NAME }}
-      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
-      CONTACT_FORM_ENDPOINT: ${{ secrets.CONTACT_FORM_ENDPOINT }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      FORM_FORWARD_AUTH_TOKEN: ${{ secrets.FORM_FORWARD_AUTH_TOKEN }}
-      REMOTE_APP_ROOT: ${{ secrets.REMOTE_APP_ROOT || 'apps/sismosmart-web/current' }}
-      REMOTE_APP_URI: ${{ secrets.REMOTE_APP_URI || '/' }}
-      REMOTE_HOME: ${{ secrets.REMOTE_HOME || '/home/sismosma' }}
-      REMOTE_NODE_VERSION: ${{ secrets.REMOTE_NODE_VERSION || '22.18.0' }}
-      RELEASE_RETENTION_COUNT: ${{ vars.RELEASE_RETENTION_COUNT || '6' }}
-      REMOTE_RELEASES_ROOT: ${{ secrets.REMOTE_RELEASES_ROOT || 'apps/sismosmart-web/releases' }}
-      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PRIVATE_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY_BASE64 }}
-      SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_USER: ${{ secrets.SSH_USER }}
-      WAITLIST_FORM_ENDPOINT: ${{ secrets.WAITLIST_FORM_ENDPOINT }}
-      WRITE_RUNTIME_ENV_FILE: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
@@ -459,6 +423,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and mask Doppler prd_deploy secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_DEPLOY }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_deploy grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_deploy
+
+      - name: Fetch and mask Doppler prd_app secrets
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD_APP }}
+          inject-env-vars: true
+
+      - name: Verify scoped Doppler prd_app grant
+        run: node scripts/ops/check-fetched-doppler.mjs prd_app
+
       - name: Validate required deployment secrets
         shell: bash
         run: |
@@ -478,9 +463,6 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Run local quality gates
         run: |
           npm run lint
@@ -491,17 +473,21 @@ jobs:
 
       - name: Validate immutable artifact and isolated preflight
         if: ${{ inputs.operation == 'validate-deploy' }}
+        env:
+          WRITE_RUNTIME_ENV_FILE: "true"
+          RELEASE_RETENTION_COUNT: ${{ vars.RELEASE_RETENTION_COUNT || '6' }}
         run: npm run deploy:validate
 
       - name: Deploy standalone app transactionally
         if: ${{ inputs.operation == 'deploy' }}
+        env:
+          WRITE_RUNTIME_ENV_FILE: "true"
+          RELEASE_RETENTION_COUNT: ${{ vars.RELEASE_RETENTION_COUNT || '6' }}
         run: npm run deploy:server
 
       - name: Verify production
         if: ${{ inputs.operation == 'deploy' }}
         env:
           BASE_URL: https://sismosmart.com
-          CONTACT_FORM_ENDPOINT: ${{ secrets.CONTACT_FORM_ENDPOINT }}
           VERIFY_FORM_RUNTIME: "true"
-          WAITLIST_FORM_ENDPOINT: ${{ secrets.WAITLIST_FORM_ENDPOINT }}
         run: bash scripts/post-deploy-verify.sh

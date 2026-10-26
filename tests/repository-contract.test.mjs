@@ -72,7 +72,7 @@ test("Node runtime and package module mode remain aligned", () => {
     assert.match(workflow, /NODE_VERSION: "22\.18\.0"/);
   }
   assert.match(securityWorkflow, /node-version: "22\.18\.0"/);
-  assert.match(productionWorkflow, /REMOTE_NODE_VERSION: .*'22\.18\.0'/);
+  assert.match(productionWorkflow, /NODE_VERSION: "22\.18\.0"/);
   assert.match(deployConfig, /REMOTE_NODE_VERSION \|\| "22\.18\.0"/);
   const prepareStandalone = readText("scripts/deploy/prepare-standalone.mjs");
   assert.ok(prepareStandalone.includes('import("./server.js")'));
@@ -366,25 +366,14 @@ test("analytics observability uses canonical public config and fail-closed conse
   assert.match(quality, /NEXT_PUBLIC_ANALYTICS_ENABLED: "true"/);
   assert.ok(production.includes("vars.NEXT_PUBLIC_GA_ID"));
   assert.ok(!production.includes("secrets.NEXT_PUBLIC_GA_ID"));
-  assert.match(workflow, /dopplerhq\/cli-action@014df23b1329b615816a38eb5f473bb9000700b1/);
-  const workflowLines = workflow.split("\n");
-  assert.equal(
-    workflowLines.filter((line) => line.startsWith("      DOPPLER_TOKEN:")).length,
-    0,
-    "the bootstrap token must not be exposed at job scope",
-  );
-  assert.equal(
-    workflowLines.filter((line) => line.startsWith("          DOPPLER_TOKEN:")).length,
-    4,
-    "only the four Doppler-consuming steps may receive the bootstrap token",
-  );
-  assert.match(workflow, /DOPPLER_TOKEN: \$\{\{ secrets\.DOPPLER_TOKEN_PRD_OPS \}\}/);
-  assert.match(workflow, /DOPPLER_PROJECT: "sismosmart-web"/);
-  assert.match(workflow, /DOPPLER_CONFIG: "prd_ops"/);
-  assert.match(workflow, /npm run doppler:check -- --doppler prd_ops/);
-  assert.match(workflow, /doppler run --project "\$DOPPLER_PROJECT" --config "\$DOPPLER_CONFIG" -- npm run --silent ops:status/);
-  assert.match(workflow, /doppler run --project "\$DOPPLER_PROJECT" --config "\$DOPPLER_CONFIG" --\s+npm run ops:analytics-admin-audit/);
-  assert.match(workflow, /doppler run --project "\$DOPPLER_PROJECT" --config "\$DOPPLER_CONFIG" --\s+npm run ops:analytics-audit/);
+  assert.match(workflow, /dopplerhq\/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534/);
+  assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD_OPS/);
+  assert.match(workflow, /inject-env-vars: true/);
+  assert.match(workflow, /node scripts\/ops\/check-fetched-doppler\.mjs prd_ops/);
+  assert.match(workflow, /npm run --silent ops:status/);
+  assert.match(workflow, /npm run ops:analytics-admin-audit/);
+  assert.match(workflow, /npm run ops:analytics-audit/);
+  assert.doesNotMatch(workflow, /doppler run|DOPPLER_TOKEN: \$\{\{/);
   assert.doesNotMatch(workflow, /vars\.(?:NEXT_PUBLIC|GOOGLE_|CLARITY_)/);
   assert.doesNotMatch(workflow, /secrets\.(?:GOOGLE_|CLARITY_)/);
   assert.ok(workflow.includes("always()"));
@@ -550,8 +539,9 @@ test("DNS cutover audit protects delegation, origin services, and legacy isolati
   assert.equal(config.originIpv4, undefined);
   assert.equal(config.legacyIpv4, undefined);
   assert.match(audit, /hydrateNetworkConfig/);
-  assert.match(workflow, /DNS_ORIGIN_IPV4: \${\{ secrets\.DNS_ORIGIN_IPV4 \}\}/);
-  assert.match(workflow, /DNS_LEGACY_IPV4: \${\{ secrets\.DNS_LEGACY_IPV4 \}\}/);
+  assert.match(workflow, /environment: production/);
+  assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD_OPS/);
+  assert.doesNotMatch(workflow, /secrets\.DNS_(?:ORIGIN|LEGACY)_IPV4/);
   assert.match(audit, /registry delegation/);
   assert.match(audit, /no current DNS answer references legacy IPv4/);
   assert.match(auditLib, /isolated-provider-catch-all/);
@@ -1079,38 +1069,47 @@ test("public repository static analysis is explicit and fail-closed", () => {
   assert.match(readText("docs/operations/repository-governance.md"), /Public organization repository protection and analysis/);
 });
 
-test("production operations have isolated GitHub environment and secret boundaries", () => {
-  const workflow = readText(".github/workflows/deploy-prod.yml");
+test("production workflows use environment-only Doppler bootstrap tokens", () => {
+  const deploy = readText(".github/workflows/deploy-prod.yml");
   const health = readText(".github/workflows/production-health.yml");
   const analytics = readText(".github/workflows/analytics-observability.yml");
+  const dns = readText(".github/workflows/dns-cutover.yml");
+  const mail = readText(".github/workflows/mail-dns.yml");
   const governance = readText("docs/operations/repository-governance.md");
-
   function job(name) {
-    const match = workflow.match(new RegExp(`^  ${name}:\\r?\\n([\\s\\S]*?)(?=^  [a-z][a-z-]*:\\r?\\n|$(?![\\s\\S]))`, "m"));
-    assert.ok(match, `${name} must be a dedicated workflow job`);
-    return match[1];
+    const blocks = deploy.split(/^  (?=[a-z][a-z-]*:)/m);
+    const found = blocks.find((block) => block.startsWith(`${name}:\n`));
+    assert.ok(found, `${name} must exist`);
+    return found;
   }
-
+  const token = (source, scope) => {
+    assert.ok(source.includes(`secrets.DOPPLER_TOKEN_${scope}`));
+    assert.match(source, /dopplerhq\/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534/);
+    assert.match(source, /inject-env-vars: true/);
+    assert.match(source, /node scripts\/ops\/check-fetched-doppler\.mjs/);
+  };
   const status = job("status");
-  assert.match(status, /^    environment:\r?\n      name: production$/m);
-  assert.match(status, /secrets\.OPS_SSH_PRIVATE_KEY_BASE64/);
-  assert.match(status, /secrets\.OPS_CPANEL_API_TOKEN/);
-  assert.doesNotMatch(status, /secrets\.(?:SSH_|CPANEL_API_TOKEN|CPANEL_HOST)/);
-
+  assert.match(status, /name: production\n/);
+  token(status, "PRD_OPS");
+  assert.doesNotMatch(status, /DOPPLER_TOKEN_PRD_DEPLOY|DOPPLER_TOKEN_PRD_APP/);
   for (const name of ["reconcile", "permissions", "retention", "forms", "deploy"]) {
-    const mutatingJob = job(name);
-    assert.match(mutatingJob, /^    environment:\r?\n      name: production-deploy$/m);
-    assert.doesNotMatch(mutatingJob, /^      name: production$/m);
-    assert.doesNotMatch(mutatingJob, /secrets\.OPS_/);
+    const mutation = job(name);
+    assert.match(mutation, /name: production-deploy\n/);
+    token(mutation, "PRD_DEPLOY");
+    assert.doesNotMatch(mutation, /DOPPLER_TOKEN_PRD_OPS/);
+    if (["forms", "deploy"].includes(name)) token(mutation, "PRD_APP");
+    else assert.doesNotMatch(mutation, /DOPPLER_TOKEN_PRD_APP/);
   }
-
-  assert.match(health, /^    environment: production$/m);
-  assert.match(health, /secrets\.OPS_SSH_PRIVATE_KEY_BASE64/);
-  assert.match(health, /secrets\.OPS_CPANEL_API_TOKEN/);
-  assert.doesNotMatch(health, /secrets\.(?:SSH_|CPANEL_API_TOKEN|CPANEL_HOST)/);
-  assert.match(analytics, /^    environment: production$/m);
-  assert.match(analytics, /DOPPLER_TOKEN:\s*\$\{\{ secrets\.DOPPLER_TOKEN_PRD_OPS \}\}/);
+  for (const readOnly of [health, analytics, dns, mail]) {
+    assert.match(readOnly, /environment: production/);
+    token(readOnly, "PRD_OPS");
+    assert.doesNotMatch(readOnly, /DOPPLER_TOKEN_PRD_DEPLOY|DOPPLER_TOKEN_PRD_APP/);
+  }
+  assert.match(health, /GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(governance, /production-deploy/);
-  assert.match(governance, /requiring approval|required-reviewer/i);
-  assert.match(governance, /OPS_/);
+  for (const workflow of [deploy, health, analytics, dns, mail]) {
+    for (const m of workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)) {
+      assert.match(m[1], /^DOPPLER_TOKEN_PRD_(OPS|DEPLOY|APP)$/);
+    }
+  }
 });
