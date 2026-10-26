@@ -24,11 +24,13 @@ Therefore only reviewer-approved jobs may fetch it.
 
 ## Safe one-time migration
 
-The new empty `prd_sismosmart` config was created without modifying or
-removing the existing `ci`, `prd_app`, `prd_deploy`, `prd_ops` or historic
-configs. To populate it, use the protected Doppler dashboard's secure secret
-import/copy facility. Compare **names and effective values** inside Doppler,
-resolving duplicate keys explicitly. Prefer the production-deployment source
+The new `prd_sismosmart` config was populated on 27 October 2026 with all
+19 user secret keys from `ci`, `prd_app`, `prd_deploy` and `prd_ops`. An
+independent local comparison confirmed all source and destination values
+match without exposing any values; all 19 values are masked. The old configs
+remain intact for rollback. For future changes, compare **names and effective
+values** inside Doppler and resolve duplicate keys explicitly. Prefer the
+production-deployment source
 for `SSH_*`, `CPANEL_*`, `DOMAIN` and the application source for form runtime
 keys; only the owner can approve collisions. Do not copy credentials through
 chat, shell history, an unencrypted export, GitHub or source code. Use the
@@ -58,9 +60,17 @@ all old consumers have been identified and retired.
    fetched values; `check-fetched-doppler.mjs` verifies the exact project,
    config and required keys before any mutation. Neither mechanism makes
    the **provider** SSH/cPanel keys read-only.
-4. Keep new deployment and operational workflows disabled. Verify exact-head
-   CI, real Fetch Secrets, a non-activating deploy preflight and rollback
-   readiness, then perform the separately approved production handoff.
+4. After adding the token, run **Doppler Connectivity Preflight** manually
+   from the main branch, entering the exact 40-character main commit SHA.
+   GitHub requires `production-deploy` owner approval **before the job starts**.
+   It reads the config via the pinned Fetch Secrets action and checks only
+   the expected project, config and required key presence. No deploy, remote
+   command, DNS write or secret-value output is performed.
+5. Keep the five production/deploy/monitoring workflows disabled. After the
+   connection test succeeds, verify exact-head CI, non-activating deployment
+   preflight and rollback readiness before a separately approved production
+   controller handoff. Keep the old token/configs until old consumers are
+   safely retired.
 
 ## Monitoring tradeoff (intentional)
 

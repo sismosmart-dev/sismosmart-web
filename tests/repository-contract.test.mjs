@@ -1108,3 +1108,18 @@ test("only owner-reviewed production jobs receive a unified Doppler token", () =
     }
   }
 });
+
+
+test("Doppler connectivity preflight is single-token, owner-reviewed, exact-SHA and non-deploying", () => {
+  const workflow = readText(".github/workflows/doppler-connectivity.yml");
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /schedule:|workflow_run:|pull_request:/);
+  assert.match(workflow, /environment: production-deploy/);
+  assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /EXPECTED_SHA.*ACTUAL_SHA/);
+  assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD/);
+  assert.match(workflow, /dopplerhq\/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534/);
+  assert.match(workflow, /check-fetched-doppler\.mjs prd_sismosmart/);
+  assert.doesNotMatch(workflow, /deploy:|ops:production-health|ssh|cpanel|curl|wget|npm ci|writeFile/);
+  assert.match(workflow, /persist-credentials: false/);
+});

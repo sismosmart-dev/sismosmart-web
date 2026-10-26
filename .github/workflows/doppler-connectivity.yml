@@ -1,0 +1,58 @@
+name: Doppler Connectivity Preflight
+
+# One-time, deliberately non-deploying acceptance workflow. The production
+# Doppler grant can read privileged infrastructure credentials, so it must
+# never run on pull requests, schedules, or without environment approval.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Exact 40-character main SHA approved for this check"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doppler-connectivity
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: ops/doppler-connectivity
+    if: ${{ github.ref == 'refs/heads/main' }}
+    environment: production-deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Confirm requested main commit
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          ACTUAL_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]] || [[ "$EXPECTED_SHA" != "$ACTUAL_SHA" ]]; then
+            echo "Exact main SHA mismatch; refusing to read production configuration."
+            exit 1
+          fi
+
+      - name: Checkout audited revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: "22.18.0"
+
+      - name: Fetch masked production configuration
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD }}
+          inject-env-vars: true
+
+      - name: Verify config scope and required keys without printing values
+        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
