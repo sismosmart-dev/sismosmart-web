@@ -33,6 +33,7 @@ import {
   RELEASE_READY_FILE,
   writeReleaseMetadata,
 } from "./releases-lib.mjs";
+import { assertValidationBaseline, VALIDATION_PHASES } from "./preflight-policy.mjs";
 import { runDeploymentTransaction } from "./transaction.mjs";
 
 function shellEscape(value) {
@@ -636,6 +637,12 @@ done
         console.log("DEPLOY_RUNTIME node=none");
       }
 
+      if (validationOnly) {
+        assertValidationBaseline(context);
+        console.log("DEPLOY_VALIDATION_BASELINE current=consistent runtime=available backups=skipped");
+        return;
+      }
+
       const snapshotScript = `
 set -eu
 mkdir -p ${shellEscape(remoteTmpRoot)} ${shellEscape(publicHtmlPath)}
@@ -690,8 +697,7 @@ tar -czf ${shellEscape(publicBackupPath)} -C ${shellEscape(publicHtmlPath)} .
 
     preflight: async () => {
       if (!context.previousNodePath) {
-        console.warn("DEPLOY_PREFLIGHT skipped=no-existing-node-runtime");
-        return;
+        throw new Error("Cannot run isolated preflight without an existing Node.js runtime.");
       }
 
       logStep("Starting the new release on an isolated localhost port");
@@ -959,6 +965,8 @@ printf 'preflight_status=healthy\n'
     },
 
     cleanup: async (state) => {
+      // A failed read-only baseline must not issue any remote cleanup writes.
+      if (validationOnly && !context.artifact) return;
       await fs.rm(context.artifact?.artifactPath || "", { force: true }).catch(() => undefined);
       await fs.rm(context.artifact?.checksumPath || "", { force: true }).catch(() => undefined);
 
@@ -992,9 +1000,7 @@ printf 'preflight_status=healthy\n'
     },
   };
 
-  const phases = validationOnly
-    ? ["prepare", "snapshot", "preflight"]
-    : undefined;
+  const phases = validationOnly ? VALIDATION_PHASES : undefined;
   const state = await runDeploymentTransaction(operations, { phases });
 
   if (validationOnly) {

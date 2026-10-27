@@ -2,11 +2,11 @@
 
 ## Safety model
 
-Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the public-only `status` operation uses the separate, tokenless `production` environment. Only `DOPPLER_TOKEN_PRD` may be stored in GitHub `production-deploy`; SSH/cPanel/form/DNS/analytics values stay in consolidated Doppler config `prd_sismosmart`. See `doppler-github-actions.md`. Service Token provisioning and secure config consolidation remain pending acceptance.
+Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the public-only `status` operation uses the separate, tokenless `production` environment. Only `DOPPLER_TOKEN_PRD` may be stored in GitHub `production-deploy`; SSH/cPanel/form/DNS/analytics values stay in consolidated Doppler config `prd_sismosmart`. See `doppler-github-actions.md`. The unified Doppler config and owner-reviewed manual Fetch Secrets workflow were accepted; release deployment remains disabled pending separate acceptance.
 
 Use the workflow operations in this order:
 
-1. `validate-deploy`: build, package, upload, checksum, extract, validate and run an isolated localhost preflight. It does not mutate Passenger, `current`, `.htaccess` or `public_html`.
+1. `validate-deploy`: first check the existing Passenger app, `current` symlink and executable Node.js runtime **read-only**; fail closed on missing or inconsistent baselines. Then build, package, upload, checksum, extract and run an isolated localhost preflight. Temporary release artifacts are removed afterwards. No Passenger registration, `current`, `.htaccess`, `public_html` or live-route mutation; no webroot backup is created for validation.
 2. `deploy`: execute the full transactional deployment after validation succeeds.
 3. `reconcile`: align `current` with the already active Passenger release when an operator has independently confirmed the desired release.
 4. `permissions`: audit and normalize retained release and `public_html` modes.
@@ -51,7 +51,7 @@ npm run doppler:deploy:validate
 npm run doppler:runtime-env
 ```
 
-The deployment validation command must complete without activation. The runtime
+The deployment validation command must complete without activation, skip webroot backups, and fail rather than skipping the isolated preflight. The runtime
 command is dry-run by default. An approved apply operation must preserve mode
 `0600` and must never place the runtime file under the public web root.
 
@@ -60,15 +60,16 @@ command is dry-run by default. An approved apply operation must preserve mode
 Run `npm run doppler:deploy:validate` first. Confirm that the log includes:
 
 ```text
+DEPLOY_STATE phase=snapshot
+DEPLOY_VALIDATION_BASELINE current=consistent runtime=available backups=skipped
 DEPLOY_STATE phase=prepare
 DEPLOY_PREPARED buildId=...
-DEPLOY_STATE phase=snapshot
 DEPLOY_STATE phase=preflight
 DEPLOY_PREFLIGHT status=healthy
 Deployment validation completed without activation.
 ```
 
-The temporary release, artifact and recovery backups must be removed by cleanup. Passenger, `current`, `.htaccess`, `public_html` and the running process must remain unchanged.
+The temporary release and artifact must be removed by cleanup; validation-only never creates recovery backups. Passenger, `current`, `.htaccess`, `public_html` and the running process must remain unchanged.
 
 ## Normal deployment
 
