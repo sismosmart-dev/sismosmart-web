@@ -54,7 +54,7 @@ export async function executeCmsAdmin(request: Request, context: RouteContext, a
       const mutation = { action, ...parsed.data } as CmsMutation;
       const result = await mutateContent(connection, locale as Locale, key as ContentKey, mutation);
       if (action !== "draft") {
-        try { revalidatePath(`/${locale}`, "page"); }
+        try { revalidatePath(`/${locale}`, key === "site.chrome" ? "layout" : "page"); }
         catch { console.error("CMS_CACHE_REVALIDATION_FAILED"); }
       }
       return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });

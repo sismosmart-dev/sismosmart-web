@@ -69,6 +69,29 @@ const guideHubCopy = z.strictObject({
   relatedResourcesHeading: homeLabel,
 });
 
+// Shared layout labels: text only. All routes, social/contact destinations,
+// accessibility behavior and emergency/product notices remain source-controlled.
+const chromeLabels = z.strictObject({
+  product: homeLabel,
+  technology: homeLabel,
+  howItWorks: homeLabel,
+  pilotProgram: homeLabel,
+  investors: homeLabel,
+  faq: homeLabel,
+  about: homeLabel,
+  contact: homeLabel,
+  privacy: homeLabel,
+  terms: homeLabel,
+  security: homeLabel,
+  press: homeLabel,
+  glossary: homeLabel,
+  guides: homeLabel.optional(),
+});
+const siteChrome = z.strictObject({
+  navigation: z.strictObject({ eyebrow: homeLabel, primaryCta: homeLabel, labels: chromeLabels }),
+  footer: z.strictObject({ note: homeDescription, explore: homeLabel, legal: homeDescription }),
+});
+
 const contactCopy = z.strictObject({
   channels: z.array(z.strictObject({
     title: homeLabel, description: homeDescription, value: homeLabel,
@@ -168,6 +191,7 @@ type HomeHero = z.infer<typeof homeHero>;
 type HomeMeta = z.infer<typeof homeMeta>;
 type HomeSections = z.infer<typeof homeSections>;
 type ContactCopy = z.infer<typeof contactCopy>;
+type SiteChromeDocument = z.infer<typeof siteChrome>;
 type GuideHubCopyDocument = z.infer<typeof guideHubCopy>;
 type PageIntro = z.infer<typeof pageIntro>;
 type PageSections = z.infer<typeof pageSections>;
@@ -175,8 +199,10 @@ type GuideBody = z.infer<typeof guideBody>;
 export type GuideBodyKey = `guide.${GuideTranslationKey}.body`;
 export type PageIntroKey = `page.${StaticPageKey}.intro`;
 export type PageSectionsKey = `page.${SectionPageKey}.sections`;
-export type ContentKey = "home.hero" | "home.meta" | "home.sections" | "page.contact.copy" | "guides.hub" | PageIntroKey | PageSectionsKey | PageDetailsKey | GuideBodyKey;
-export type ContentDocument<K extends ContentKey> = K extends "home.hero"
+export type ContentKey = "site.chrome" | "home.hero" | "home.meta" | "home.sections" | "page.contact.copy" | "guides.hub" | PageIntroKey | PageSectionsKey | PageDetailsKey | GuideBodyKey;
+export type ContentDocument<K extends ContentKey> = K extends "site.chrome"
+  ? SiteChromeDocument
+  : K extends "home.hero"
   ? HomeHero
   : K extends "home.meta"
     ? HomeMeta
@@ -216,7 +242,7 @@ export function isContentLocale(value: unknown): value is Locale {
 }
 
 export function isContentKey(value: unknown): value is ContentKey {
-  return value === "home.hero" || value === "home.meta" || value === "home.sections" || value === "page.contact.copy" || value === "guides.hub" ||
+  return value === "site.chrome" || value === "home.hero" || value === "home.meta" || value === "home.sections" || value === "page.contact.copy" || value === "guides.hub" ||
     (typeof value === "string" && (pageIntroKeys.has(value) || pageSectionsKeys.has(value) || pageDetailsKeys.has(value) || guideBodyKeys.has(value)));
 }
 
@@ -233,7 +259,7 @@ function rejectMarkup(input: unknown): void {
 
 export function validateContentDocument<K extends ContentKey>(key: K, input: unknown): ContentDocument<K> {
   if (!isContentKey(key)) throw new Error("CMS_INVALID_CONTENT_KEY");
-  const schema = key === "home.hero" ? homeHero : key === "home.meta" ? homeMeta :
+  const schema = key === "site.chrome" ? siteChrome : key === "home.hero" ? homeHero : key === "home.meta" ? homeMeta :
     key === "home.sections" ? homeSections : key === "page.contact.copy" ? contactCopy : key === "guides.hub" ? guideHubCopy :
     pageSectionsKeys.has(key) ? pageSections : guideBodyKeys.has(key) ? guideBody :
       key === "page.product.details" ? productDetails :
