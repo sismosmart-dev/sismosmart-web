@@ -24,3 +24,54 @@ The SismoSmart website currently has six locale-specific TypeScript content sour
 Only documented keys in `src/lib/content-api/contracts.ts` are editable. No raw HTML is accepted; the runtime must not return drafts to public visitors. Limit admin writes to authenticated, audited operations. Version/optimistic-lock checks, read-only public fallback, and rollback testing are required before enabling writes.
 
 This repository is public. Never commit database passwords, SQL exports containing site/customer data, CMS bearer tokens, or cPanel browser session URLs. Existing deploy `runtime-env.mjs` uses an explicit allowlist and will require a reviewed update before any production CMS activation.
+
+## Protected authoring API — staged, disabled by default
+
+This code path only becomes operational after the migration, backup/restore test,
+scoped database grants, production runtime secret allowlist and exact-release
+acceptance are completed. A merged feature PR alone does **not** activate the CMS.
+`CMS_DB_ENABLED` and `CMS_WRITE_ENABLED` must both be explicitly `true`, and
+`CMS_ADMIN_TOKEN` must be a randomly generated **32+ character base64url** bearer
+token stored in the protected server-only Doppler configuration. Never place it
+in frontend JavaScript, GitHub issue text, public docs or scheduled Actions.
+
+The first registered keys are `home.hero` and `home.meta`; locale must be one of
+`en`, `tr`, `es`, `id`, `pt`, `it`. Example URLs (do not paste real secrets):
+
+| Method and route | Action |
+| --- | --- |
+| `GET /api/admin/content/en/home.hero` | Authenticated private draft, published value, revision counter and last 25 revision labels |
+| `PATCH /api/admin/content/en/home.hero` | Save draft without changing any visitor-facing copy |
+| `POST /api/admin/content/en/home.hero/publish` | Publish the latest valid draft; update rendering and SEO cache |
+| `POST /api/admin/content/en/home.hero/rollback` | Restore an earlier published revision, or `targetVersion: 0` to return to code-controlled copy |
+
+All admin calls require `Authorization: Bearer <a-long-random-token>`; writes
+must use `Content-Type: application/json` and include an integer
+`expectedVersion` from the protected GET response. The PATCH body also needs
+`content: { "title": "...", "description": "..." }`; the rollback body needs
+`targetVersion`. A version mismatch returns 409; a missing publication/draft
+returns 422. Invalid locale/key, unapproved fields, HTML markup and oversized
+request bodies are rejected. Browser requests from any noncanonical Origin
+are rejected even if a token is provided. CORS is not enabled.
+
+The six localized homepage routes are deliberately dynamic so they can read
+published content from the SQL database at request time after activation, with
+the existing TypeScript copy as safe fallback. The homepage HTML, page metadata
+and homepage JSON-LD use the same resolved, validated copy. Other pages remain
+static until migrated in #29. Dynamic route cost is limited to six homepages,
+with up to two read queries per request and at most two local DB connections per
+Node/Passenger worker; do not enable unbounded connection pools.
+
+**A DB failure must never disclose drafts or break public content.** Database
+changes are transactionally recorded in `cms_revision`. Every successful
+publish/rollback is reflected in the homepage on the next request without a
+new GitHub deploy. First acceptance must verify exact HTTP responses for
+GET/PATCH/publish/rollback, published/draft separation, conflict handling,
+public HTML/meta/JSON-LD parity and a reset to baseline after `targetVersion: 0`.
+
+**Production retention/restore gap:** Hosting cPanel's Backup UI currently has
+no scheduled server-created backup and no cron jobs. Do not enable production
+content writes until a portable SQL dump is stored outside the web root,
+restored into an isolated test database, and a sustainable recurring backup
+with retention has been proven. An empty schema or GitHub release archive is
+not a substitute for a database backup.
