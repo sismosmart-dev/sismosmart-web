@@ -18,7 +18,7 @@
     "braces": "file:vendor/braces-compat",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.3",
     "googleapis": "^172.0.0",
     "node-domexception": "file:vendor/node-domexception",
     "puppeteer-core": "25.16.0",
