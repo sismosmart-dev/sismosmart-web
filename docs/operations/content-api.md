@@ -96,3 +96,52 @@ that denial with another account, command, or tool. Accordingly no verified
 SQL backup exists yet and **no production schema, database grants, or runtime
 activation must be attempted**. This is an explicit release hold, not a claim
 that GitHub Actions artifacts or a code rollback protect database contents.
+
+## SQL backup command (prepared; live backup not yet accepted)
+
+A repeatable, non-destructive backup tool is now available:
+
+```bash
+CMS_BACKUP_USER='<dedicated read-only DB account>' \
+CMS_BACKUP_PASSWORD='<provided securely via protected runtime environment>' \
+CMS_BACKUP_DB='sismosma_web' \
+CMS_BACKUP_HOST='localhost' \
+CMS_BACKUP_DIR='/home/<cpanel-account>/.sismosmart-cms/backups' \
+npm run ops:cms-db-backup
+```
+
+Do not paste real credentials into shell history, issues or code. Prefer running
+from a protected secret-injecting environment; the placeholders above illustrate
+the required names, **not** an instruction to paste passwords interactively.
+
+The tool requires the native `mariadb-dump` binary and a separate account with
+SELECT/SHOW VIEW/TRIGGER rights as needed for the CMS schema. It runs a
+single-transaction dump of the local database, writes a `.sql.gz` archive
+atomically in a private directory outside the web root, and emits a matching
+SHA-256 sidecar. Use `npm run ops:cms-db-verify -- /absolute/path/to/backup.sql.gz`
+to recheck the matching checksum and the complete compressed SQL stream without
+importing any data. This does not replace an independent restore test.
+If dump/gzip exits unsuccessfully, incomplete output is
+removed. SQL password is passed via child-process environment, not the argument
+list or logs. Verification checks checksum and complete gzip decompression.
+
+**Local storage is not sufficient for disaster recovery.** The archive must
+also be transferred to an access-controlled **off-host** location, an isolated
+MariaDB restore performed with an *independent* test schema, and retention
+scheduled and observed. The tool does not perform restore or automatically
+delete/rotate backups, to prevent any accidental production data loss. Do not
+run a restore against `sismosma_web` on the live hosting account. Once off-host
+retention and restore are proven, a daily cPanel cron schedule can be added
+without an additional paid service; do not activate it before checking output,
+server disk limits and privacy of the retention target.
+
+### Isolated test proof, not a live hosting backup
+
+On 2026-10-27, the backup tool was exercised against a temporary MariaDB 11.8
+container using the actual two-table CMS migration and sample rows. A portable
+SQL archive was created, SHA-256 and complete gzip stream verified, and the
+archive imported successfully into a **separate** empty test database. The
+restored data matched one published content row and two revision records,
+including its revision/version. The temporary Docker container and test
+files were cleaned up. This proves the **toolchain** on a disposable schema,
+not that the live cPanel database has been backed up or that retention exists.
