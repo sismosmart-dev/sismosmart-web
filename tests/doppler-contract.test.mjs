@@ -1,6 +1,7 @@
 import { validateCmsRuntimeConfiguration } from "../scripts/deploy/cms-runtime-contract.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import {
@@ -13,6 +14,7 @@ import {
 
 import {
   parseEnvSchema,
+  auditInventory,
   validateInventory,
   validatePublicSchema,
 } from "../scripts/ops/validate-doppler-contract.mjs";
@@ -124,6 +126,48 @@ test("Doppler inventory validation is names-only and fails closed", () => {
   assert.doesNotThrow(() => validateInventory("main", names));
 });
 
+
+test("report mode refuses to pretend to inspect Doppler without a config", () => {
+  const result = spawnSync("node", ["scripts/ops/validate-doppler-contract.mjs", "--report"], {
+    encoding: "utf8", env: process.env,
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /--report requires --doppler main/);
+});
+
+test("names-only audit reports every missing/obsolete/duplicate key without bypassing strict validation", () => {
+  const input = [
+    "DOMAIN", "NEXT_PUBLIC_ANALYTICS_ENABLED", "DOPPLER_CONFIG", "DOPPLER_PROJECT",
+    "MEASUREMENTPROTOCOLAPI", "NEXT_PUBLIC_CONTACT_FORM_ENDPOINT", "NEXT_PUBLIC_CONTACT_FORM_ENDPOINT",
+  ];
+  const report = auditInventory("main", input);
+  assert.equal(report.ready, false);
+  assert.equal(report.config, "main");
+  assert.equal(report.supplied, 4);
+  assert.ok(report.missingRequired.includes("DNS_ORIGIN_IPV4"));
+  assert.ok(report.missingRequired.includes("CONTACT_FORM_ENDPOINT"));
+  assert.deepEqual(report.deprecated, ["MEASUREMENTPROTOCOLAPI"]);
+  assert.deepEqual(report.unexpected, ["NEXT_PUBLIC_CONTACT_FORM_ENDPOINT"]);
+  assert.deepEqual(report.duplicates, ["NEXT_PUBLIC_CONTACT_FORM_ENDPOINT"]);
+  assert.ok(report.missingOptional.includes("CMS_ADMIN_TOKEN"));
+  assert.doesNotThrow(() => JSON.stringify(report));
+  assert.throws(() => validateInventory("main", input), /Deprecated key: MEASUREMENTPROTOCOLAPI/);
+});
+
+test("names-only audit is clean when the approved inventory is complete", () => {
+  const all = [...contractKeysForConfig("main"), "DOPPLER_PROJECT", "DOPPLER_CONFIG"];
+  const report = auditInventory("main", all);
+  assert.equal(report.ready, true);
+  assert.deepEqual(report.missingRequired, []);
+  assert.deepEqual(report.missingOptional, []);
+  assert.deepEqual(report.unexpected, []);
+  assert.deepEqual(report.deprecated, []);
+  assert.deepEqual(report.duplicates, []);
+  assert.equal(report.supplied, contractKeysForConfig("main").length);
+  assert.throws(() => auditInventory("ci", all), /Unsupported Doppler config: ci/);
+  assert.throws(() => auditInventory("main", null), /Invalid Doppler inventory/);
+  assert.throws(() => auditInventory("main", ["x\nnot-a-key"]), /Invalid Doppler key name/);
+});
 
 test("Doppler runner always includes explicit project and approved config", () => {
   assert.deepEqual(

@@ -122,6 +122,50 @@ export function validateInventory(config, names) {
   });
 }
 
+/**
+ * Read-only, names-only consolidation audit. Report every issue at once;
+ * never accept a partial config or bypass the strict validateInventory path.
+ */
+export function auditInventory(config, names) {
+  const expected = contractKeysForConfig(config);
+  if (!Array.isArray(names)) fail("Invalid Doppler inventory");
+  const seen = new Set();
+  const duplicates = new Set();
+  const deprecated = new Set();
+  const unexpected = new Set();
+
+  for (const key of names) {
+    if (typeof key !== "string" || !KEY_PATTERN.test(key)) {
+      fail("Invalid Doppler key name");
+    }
+    if (seen.has(key)) duplicates.add(key);
+    seen.add(key);
+    if (LEGACY_ENV_KEYS.includes(key)) deprecated.add(key);
+    else if (!ENVIRONMENT_CONTRACT[key] && !DOPPLER_MANAGED_KEYS.has(key)) {
+      unexpected.add(key);
+    }
+  }
+
+  const sorted = (values) => Object.freeze([...values].sort());
+  const missingRequired = expected.filter((key) => ENVIRONMENT_CONTRACT[key].required && !seen.has(key));
+  const missingOptional = expected.filter((key) => !ENVIRONMENT_CONTRACT[key].required && !seen.has(key));
+  const issues = Object.freeze({
+    missingRequired: sorted(missingRequired),
+    missingOptional: sorted(missingOptional),
+    deprecated: sorted(deprecated),
+    unexpected: sorted(unexpected),
+    duplicates: sorted(duplicates),
+  });
+  return Object.freeze({
+    config,
+    supplied: seen.size - [...DOPPLER_MANAGED_KEYS].filter((key) => seen.has(key)).length,
+    expected: expected.length,
+    ready: !issues.missingRequired.length && !issues.deprecated.length &&
+      !issues.unexpected.length && !issues.duplicates.length,
+    ...issues,
+  });
+}
+
 function readDopplerNames(config) {
   contractKeysForConfig(config);
   const result = spawnSync(
@@ -162,11 +206,33 @@ function main() {
   );
 
   const dopplerIndex = process.argv.indexOf("--doppler");
-  if (dopplerIndex === -1) return;
+  if (dopplerIndex === -1) {
+    if (process.argv.includes("--report")) fail("--report requires --doppler main");
+    return;
+  }
   const config = process.argv[dopplerIndex + 1];
   if (!config) fail("--doppler requires an approved config name.");
 
-  const inventory = validateInventory(config, readDopplerNames(config));
+  const names = readDopplerNames(config);
+  if (process.argv.includes("--report")) {
+    const report = auditInventory(config, names);
+    console.log(JSON.stringify({
+      config: report.config,
+      ready: report.ready,
+      supplied: report.supplied,
+      expected: report.expected,
+      missingRequired: report.missingRequired,
+      missingOptional: report.missingOptional,
+      deprecated: report.deprecated,
+      unexpected: report.unexpected,
+      duplicates: report.duplicates,
+      warning: "Names-only audit: values, consumer access, token scopes and production readiness are not verified.",
+    }, null, 2));
+    if (!report.ready) process.exitCode = 1;
+    return;
+  }
+
+  const inventory = validateInventory(config, names);
   console.log(
     `Doppler inventory valid: ${inventory.config} has ${inventory.total} supported key names; ${inventory.missingOptional.length} optional names are absent.`,
   );
