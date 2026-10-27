@@ -7,16 +7,7 @@ import { Client as SshClient } from "ssh2";
 
 import { getSshAuthOptions, toRemoteAbsolutePath } from "./config.mjs";
 
-const MAX_CONNECT_ATTEMPTS = 4;
-const CONNECT_RETRY_DELAY_MS = 5000;
-const TRANSIENT_CONNECT_PATTERNS = [
-  /connection lost before handshake/i,
-  /timed out while waiting for handshake/i,
-  /handshake timeout/i,
-  /connection reset/i,
-  /econnreset/i,
-  /socket closed/i,
-];
+import { connectFreshClient, withConnectRetry } from "./connection-retry.mjs";
 
 export function runLocalCommand(command) {
   execSync(command, {
@@ -57,62 +48,17 @@ export function posixJoin(...segments) {
   return path.posix.join(...segments);
 }
 
-function wait(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-function isTransientConnectError(error) {
-  if (error?.commandStarted) {
-    return false;
-  }
-
-  const detail = [error?.message, error?.code, error?.level]
-    .filter(Boolean)
-    .join(" ");
-
-  return TRANSIENT_CONNECT_PATTERNS.some((pattern) => pattern.test(detail));
-}
-
-async function withConnectRetry(label, task) {
-  let lastError;
-
-  for (let attempt = 1; attempt <= MAX_CONNECT_ATTEMPTS; attempt += 1) {
-    try {
-      return await task();
-    } catch (error) {
-      lastError = error;
-
-      if (attempt === MAX_CONNECT_ATTEMPTS || !isTransientConnectError(error)) {
-        throw error;
-      }
-
-      const delayMs = CONNECT_RETRY_DELAY_MS * attempt;
-      console.warn(
-        `${label} failed during handshake; retrying in ${Math.round(
-          delayMs / 1000,
-        )}s (${attempt + 1}/${MAX_CONNECT_ATTEMPTS})`,
-      );
-      await wait(delayMs);
-    }
-  }
-
-  throw lastError;
-}
-
 export async function withSftp(config, task) {
-  const client = new SftpClient();
-
-  await withConnectRetry("SFTP connection", () =>
-    client.connect({
+  const client = await connectFreshClient(
+    "SFTP connection",
+    () => new SftpClient(),
+    (candidate) => candidate.connect({
       host: config.sshHost,
       port: config.sshPort,
       username: config.sshUser,
       ...getSshAuthOptions(config),
     }),
   );
-
   try {
     return await task(client);
   } finally {
