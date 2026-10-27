@@ -5,20 +5,14 @@ on:
   push:
     branches:
       - main
-      - develop
-      - "feature/**"
-      - "fix/**"
-      - "chore/**"
-      - "release/**"
-      - "oaslananka/**"
   pull_request:
     branches:
       - main
       - develop
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
