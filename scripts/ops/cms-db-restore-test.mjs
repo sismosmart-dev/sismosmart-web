@@ -29,6 +29,32 @@ export async function assertEmptyRestoreTarget(connection) {
   if (rows.length) throw new Error("CMS_RESTORE_TARGET_NOT_EMPTY");
 }
 
+/**
+ * Distinguish legitimate pre-migration (no CMS tables) backups from broken
+ * partial CMS schema, and never silently accept an unexpectedly empty import.
+ */
+export async function inspectRestoredSchema(connection, { expectEmptySourceSchema = false } = {}) {
+  const [rows] = await connection.query("SHOW FULL TABLES");
+  const names = new Set(rows.map((row) => String(Object.values(row)[0] ?? "")));
+  const hasContent = names.has("cms_content");
+  const hasRevision = names.has("cms_revision");
+  if (hasContent !== hasRevision) throw new Error("CMS_RESTORE_PARTIAL_CMS_SCHEMA");
+  if (names.size === 0 && !expectEmptySourceSchema) {
+    throw new Error("CMS_RESTORE_UNEXPECTED_EMPTY_SCHEMA");
+  }
+  if (!hasContent) {
+    return { restoredObjects: names.size, cmsTablesPresent: false, contentRows: null, revisionRows: null };
+  }
+  const [data] = await connection.query("SELECT COUNT(*) AS count FROM cms_content");
+  const [revisions] = await connection.query("SELECT COUNT(*) AS count FROM cms_revision");
+  return {
+    restoredObjects: names.size,
+    cmsTablesPresent: true,
+    contentRows: Number(data[0].count),
+    revisionRows: Number(revisions[0].count),
+  };
+}
+
 /** Must run on an independent DB instance with credentials scoped ONLY to the disposable target. */
 export async function restoreAndVerify(archive, env = process.env, { command = "mariadb" } = {}) {
   const target = isolatedRestoreSettings(env);
@@ -53,12 +79,10 @@ export async function restoreAndVerify(archive, env = process.env, { command = "
       pipeline(createReadStream(archive), createGunzip(), child.stdin),
       exit,
     ]);
-    const [data] = await connection.query("SELECT COUNT(*) AS count FROM cms_content");
-    const [revisions] = await connection.query("SELECT COUNT(*) AS count FROM cms_revision");
-    return {
-      ok: true, contentRows: Number(data[0].count), revisionRows: Number(revisions[0].count),
-      database: target.database,
-    };
+    const inspected = await inspectRestoredSchema(connection, {
+      expectEmptySourceSchema: env.CMS_RESTORE_EXPECT_EMPTY_SCHEMA === "true",
+    });
+    return { ok: true, ...inspected, database: target.database };
   } finally {
     await connection.end();
   }
@@ -70,8 +94,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error("CMS_RESTORE_TEST_FAILED code=ARCHIVE_REQUIRED");
     process.exitCode = 1;
   } else {
-    restoreAndVerify(archive).then(({ contentRows, revisionRows }) => {
-      console.log(`CMS_ISOLATED_RESTORE_OK contentRows=${contentRows} revisionRows=${revisionRows}`);
+    restoreAndVerify(archive).then(({ restoredObjects, cmsTablesPresent, contentRows, revisionRows }) => {
+      console.log(`CMS_ISOLATED_RESTORE_OK objects=${restoredObjects} cmsTables=${cmsTablesPresent} contentRows=${contentRows ?? "not_applicable"} revisionRows=${revisionRows ?? "not_applicable"}`);
       console.log("CMS_PRODUCTION_BACKUP_AND_OFFHOST_RETENTION_STILL_REQUIRED=true");
     }).catch(() => {
       console.error("CMS_RESTORE_TEST_FAILED code=PRECONDITION_OR_IMPORT_FAILED");

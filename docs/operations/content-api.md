@@ -165,7 +165,21 @@ or container and its credentials before invoking the tool. The target name must
 begin `sismosmart_restore_`, any existing tables cause refusal, and the
 production name `sismosma_web` is rejected. The command does not expose SQL
 content, accept administrator/root usernames, or drop/overwrite existing data.
-It checks restored `cms_content` and `cms_revision` row counts after import.
+After import, it inventories restored table objects. If both CMS tables
+exist, it verifies `cms_content` and `cms_revision` row counts; if only one
+exists, it refuses the incomplete schema. A pre-migration database with other
+tables may restore successfully without CMS tables (CMS row counts are reported
+as `not_applicable`). For a genuinely **zero-table** database, importing an
+empty schema is refused by default: only after independently confirming the
+source schema was empty should the isolated operator set
+`CMS_RESTORE_EXPECT_EMPTY_SCHEMA=true` for this **specific acceptance run**.
+The log then explicitly reports `objects=0 cmsTables=false` rather than
+inventing CMS rows or pretending a pre-migration backup proves CMS operation.
+
+Restore acceptance still requires the *real* source export, trusted provenance,
+private off-host retention, matching checksum and a real independent isolated
+import. This empty-schema flag is **not** permission to skip those checks, or
+proof that backup bytes represent the actual production database.
 
 The code was exercised on a temporary MariaDB 11.8 container: export from
 `sismosma_web` *inside the test container only*, successful isolated restore
