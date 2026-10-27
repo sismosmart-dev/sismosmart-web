@@ -665,7 +665,7 @@ test("GitHub Actions artifact policy preserves audit health and limits storage",
   const lighthouse = readText(".github/workflows/lighthouse.yml");
 
   assert.match(lighthouse, /uploadArtifacts: false/);
-  assert.match(lighthouse, /temporaryPublicStorage: true/);
+  assert.match(lighthouse, /temporaryPublicStorage: false/);
 
   assert.match(
     qualityCi,
@@ -1148,4 +1148,17 @@ test("only main pushes and PRs trigger expensive quality and security workflows"
   for (const path of [".github/workflows/pr-commitlint.yml", ".github/workflows/label.yml"]) {
     assert.match(readText(path), /concurrency:/);
   }
+});
+
+
+test("Lighthouse replacement is weekly, tokenless, opt-in and never chained to deploy", () => {
+  const workflow = readText(".github/workflows/lighthouse.yml");
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /schedule:/);
+  assert.match(workflow, /cron: "0 3 \* \* 1"/);
+  assert.match(workflow, /vars\.SISMOSMART_PUBLIC_MONITOR_ENABLED == 'true'/);
+  assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /temporaryPublicStorage: false/);
+  assert.doesNotMatch(workflow, /workflow_run:|secrets\.|DOPPLER_TOKEN|production-deploy|deploy:\s|ssh|cpanel/i);
 });
