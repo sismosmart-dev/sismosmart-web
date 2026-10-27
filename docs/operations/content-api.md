@@ -145,3 +145,36 @@ restored data matched one published content row and two revision records,
 including its revision/version. The temporary Docker container and test
 files were cleaned up. This proves the **toolchain** on a disposable schema,
 not that the live cPanel database has been backed up or that retention exists.
+
+### Safe automated restore acceptance (independent database only)
+
+The `npm run ops:cms-db-restore-test -- /absolute/path/to/backup.sql.gz`
+command verifies the checksum/gzip and attempts an import **only to an empty,
+pre-created disposable database** named `sismosmart_restore_*`, using a separate
+non-root SQL user. The SQL user must have permissions restricted to that
+**test database only**. The process has no database creation or deletion logic.
+
+For the isolated acceptance runner, supply `CMS_RESTORE_ISOLATED=true`,
+`CMS_RESTORE_HOST=127.0.0.1`, `CMS_RESTORE_PORT`, `CMS_RESTORE_DB`,
+`CMS_RESTORE_USER`, and `CMS_RESTORE_PASSWORD` via an authenticated,
+secret-injecting environment. `CMS_RESTORE_ISOLATED` is an explicit operator
+assertion, **not evidence of isolation by itself**; isolate the database server
+or container and its credentials before invoking the tool. The target name must
+begin `sismosmart_restore_`, any existing tables cause refusal, and the
+production name `sismosma_web` is rejected. The command does not expose SQL
+content, accept administrator/root usernames, or drop/overwrite existing data.
+It checks restored `cms_content` and `cms_revision` row counts after import.
+
+The code was exercised on a temporary MariaDB 11.8 container: export from
+`sismosma_web` *inside the test container only*, successful isolated restore
+into `sismosmart_restore_test1` with a separate restricted user; one content
+row and two revision records were confirmed. The container and files were
+removed. This is evidence for the restore **mechanism**, not yet a completed
+backup or recovery test of the actual production cPanel database.
+
+For production acceptance, first export the *actual* live database using the
+approved secure method, verify SHA-256 and gzip, keep a private off-host copy,
+then restore that copy into a separately provisioned test database and observe
+successful recurring retention. Only then consider creating CMS tables,
+scoped runtime grants and enabling `CMS_DB_ENABLED`/`CMS_WRITE_ENABLED` under
+the existing GitHub environment review.
