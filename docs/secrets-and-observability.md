@@ -34,6 +34,20 @@ node scripts/ops/validate-doppler-contract.mjs --doppler main
 Validation output is restricted to config names, key names, and counts. Raw
 Doppler errors and values are not forwarded to logs.
 
+For a **single, comprehensive names-only migration report** while the config
+is incomplete, use:
+
+```bash
+node scripts/ops/validate-doppler-contract.mjs --doppler main --report
+```
+
+This read-only command shows all missing required/optional names, deprecated
+names, unexpected names and duplicates in one pass; it exits nonzero until
+required entries and name problems are resolved. The report does **not** read
+secret values, verify Service Token consumers, authorize deletion, or assert
+that production is ready. The standard `--doppler main` strict check remains
+unchanged.
+
 ## Production entry points
 
 Deployment and owner-invoked operations use explicit project/config selection. CI remains token-free:
