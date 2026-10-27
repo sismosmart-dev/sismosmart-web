@@ -26,7 +26,7 @@ import {
 
 test("production-only Doppler contract exposes the approved project and configs", () => {
   assert.equal(DOPPLER_PROJECT, "sismosmart-web");
-  assert.deepEqual(DOPPLER_CONFIGS, ["prd_sismosmart"]);
+  assert.deepEqual(DOPPLER_CONFIGS, ["main"]);
 });
 
 test("every environment key has valid least-privilege ownership metadata", () => {
@@ -46,17 +46,27 @@ test("every environment key has valid least-privilege ownership metadata", () =>
   }
 });
 
+test("single main config registers disabled CMS keys without requiring activation", () => {
+  for (const key of ["CMS_DB_ENABLED", "CMS_WRITE_ENABLED", "CMS_DB_HOST", "CMS_DB_NAME", "CMS_DB_USER", "CMS_DB_PASSWORD", "CMS_DB_PORT", "CMS_ADMIN_TOKEN"]) {
+    assert.equal(ENVIRONMENT_CONTRACT[key].primaryConfig, "main");
+    assert.equal(ENVIRONMENT_CONTRACT[key].required, false);
+    assert.ok(contractKeysForConfig("main").includes(key));
+  }
+  assert.equal(ENVIRONMENT_CONTRACT.CMS_ADMIN_TOKEN.classification, "secret");
+  assert.equal(ENVIRONMENT_CONTRACT.CMS_DB_PASSWORD.classification, "secret");
+});
+
 test("measurement protocol authentication uses one canonical secret key", () => {
   const entry = ENVIRONMENT_CONTRACT.GOOGLE_MEASUREMENT_PROTOCOL_API_SECRET;
   assert.equal(entry.classification, "secret");
-  assert.deepEqual(entry.configs, ["prd_sismosmart"]);
-  assert.ok(contractKeysForConfig("prd_sismosmart").includes("GOOGLE_MEASUREMENT_PROTOCOL_API_SECRET"));
+  assert.deepEqual(entry.configs, ["main"]);
+  assert.ok(contractKeysForConfig("main").includes("GOOGLE_MEASUREMENT_PROTOCOL_API_SECRET"));
 });
 
-test("retired DNS origin evidence is optional in prd_ops", () => {
+test("retired DNS origin evidence is optional in main", () => {
   const entry = ENVIRONMENT_CONTRACT.DNS_LEGACY_IPV4;
-  assert.equal(entry.primaryConfig, "prd_sismosmart");
-  assert.deepEqual(entry.configs, ["prd_sismosmart"]);
+  assert.equal(entry.primaryConfig, "main");
+  assert.deepEqual(entry.configs, ["main"]);
   assert.equal(entry.required, false);
 });
 
@@ -67,7 +77,7 @@ test("all historical measurement protocol aliases are rejected", () => {
   ]);
   for (const alias of LEGACY_ENV_KEYS) {
     assert.throws(
-      () => validateInventory("prd_sismosmart", [alias]),
+      () => validateInventory("main", [alias]),
       new RegExp(`Deprecated key: ${alias}`),
     );
   }
@@ -76,7 +86,7 @@ test("all historical measurement protocol aliases are rejected", () => {
 
 test("public env schema rejects values, duplicates, and unsupported config sections", () => {
   assert.throws(
-    () => validatePublicSchema("# [prd_sismosmart]\nPUBLIC_BASE_URL=not-public\n"),
+    () => validatePublicSchema("# [main]\nPUBLIC_BASE_URL=not-public\n"),
     (error) => {
       assert.match(error.message, /PUBLIC_BASE_URL must be empty/);
       assert.doesNotMatch(error.message, /not-public/);
@@ -85,7 +95,7 @@ test("public env schema rejects values, duplicates, and unsupported config secti
   );
 
   assert.throws(
-    () => validatePublicSchema("# [prd_sismosmart]\nPUBLIC_BASE_URL=\nPUBLIC_BASE_URL=\n"),
+    () => validatePublicSchema("# [main]\nPUBLIC_BASE_URL=\nPUBLIC_BASE_URL=\n"),
     /Duplicate key: PUBLIC_BASE_URL/,
   );
 
@@ -96,34 +106,34 @@ test("public env schema rejects values, duplicates, and unsupported config secti
 });
 
 test("env schema parser records key names and ownership without retaining values", () => {
-  const parsed = parseEnvSchema("# [prd_sismosmart]\nPUBLIC_BASE_URL=should-not-survive\n");
+  const parsed = parseEnvSchema("# [main]\nPUBLIC_BASE_URL=should-not-survive\n");
   assert.deepEqual(parsed.entries.map(({ key, section }) => ({ key, section })), [
-    { key: "PUBLIC_BASE_URL", section: "prd_sismosmart" },
+    { key: "PUBLIC_BASE_URL", section: "main" },
   ]);
   assert.equal("value" in parsed.entries[0], false);
 });
 
 test("Doppler inventory validation is names-only and fails closed", () => {
-  assert.throws(() => validateInventory("prd_sismosmart", ["UNKNOWN_KEY"]), /Unknown key: UNKNOWN_KEY/);
+  assert.throws(() => validateInventory("main", ["UNKNOWN_KEY"]), /Unknown key: UNKNOWN_KEY/);
   assert.throws(
     () => validateInventory("main", []),
-    /Unsupported Doppler config: main/,
+    /Missing required key: /,
   );
 
-  const names = contractKeysForConfig("prd_sismosmart");
-  assert.doesNotThrow(() => validateInventory("prd_sismosmart", names));
+  const names = contractKeysForConfig("main");
+  assert.doesNotThrow(() => validateInventory("main", names));
 });
 
 
 test("Doppler runner always includes explicit project and approved config", () => {
   assert.deepEqual(
-    buildDopplerArgs("prd_sismosmart", ["npm", "run", "ops:status"]),
+    buildDopplerArgs("main", ["npm", "run", "ops:status"]),
     [
       "run",
       "--project",
       "sismosmart-web",
       "--config",
-      "prd_sismosmart",
+      "main",
       "--",
       "npm",
       "run",
@@ -131,11 +141,11 @@ test("Doppler runner always includes explicit project and approved config", () =
     ],
   );
   assert.throws(
-    () => buildDopplerArgs("main", ["npm", "test"]),
-    /Unsupported Doppler config: main/,
+    () => buildDopplerArgs("ci", ["npm", "test"]),
+    /Unsupported Doppler config: ci/,
   );
   assert.throws(
-    () => buildDopplerArgs("prd_sismosmart", []),
+    () => buildDopplerArgs("main", []),
     /A command is required/,
   );
 });
@@ -157,11 +167,11 @@ test("public runbooks require explicit production-only Doppler entry points", ()
   );
   const combined = `${secrets}\n${deployment}\n${readme}`;
 
-  assert.match(secrets, /`prd_sismosmart`/);
+  assert.match(secrets, /`main`/);
   assert.match(combined, /npm run doppler:deploy:validate/);
   assert.match(combined, /npm run doppler:runtime-env/);
   assert.match(combined, /npm run doppler:ops:status/);
-  assert.doesNotMatch(combined, /doppler setup[^\n]*--config main/);
+  assert.doesNotMatch(combined, /doppler setup[^\n]*--config prd_ops/);
   assert.doesNotMatch(combined, /doppler run -- npm/);
   assert.doesNotMatch(combined, /create a persistent \.env/i);
   assert.doesNotMatch(design, /MeasurementProtocolAPI|MEASUREMENTPROTOCOLAPI/);

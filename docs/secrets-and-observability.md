@@ -7,7 +7,7 @@ All supported configuration names are declared in `.env.example` and
 assignment is intentionally blank. Persistent `.env` files are unsupported.
 
 The Doppler project is `sismosmart-web` and targets **one** production config:
-`prd_sismosmart`. CI/build validation runs without any production Service
+`main`. CI/build validation runs without any production Service
 Token. Deployment, SSH, cPanel, runtime forms, DNS and Google observability
 values are consolidated only in the Doppler protected config. Do not use
 its single token for unattended production audits; see
@@ -28,7 +28,7 @@ npm run doppler:check
 The consolidated config is audited using **names only**:
 
 ```bash
-node scripts/ops/validate-doppler-contract.mjs --doppler prd_sismosmart
+node scripts/ops/validate-doppler-contract.mjs --doppler main
 ```
 
 Validation output is restricted to config names, key names, and counts. Raw
@@ -62,17 +62,18 @@ remains with the old live controller until a separate safe replacement passes.
 
 ## Migration and rollback boundary
 
-Legacy `ci`, `prd_app`, `prd_deploy` and `prd_ops` configs remain active
-migration sources; the new empty `prd_sismosmart` config must be populated
-through the official Doppler UI, resolving duplicate keys without sending
-secret values through logs or GitHub. Do not retire an old config until every
-consumer has migrated. Do not enable new operational workflows before the
-single-config token, review approvals, safe non-activating preflight and
-monitoring handoff are validated.
+Only `main` is the target production Doppler config. Existing `ci`,
+`prd_app`, `prd_deploy` and `prd_ops` are temporary migration sources,
+**not safe to delete until** all their credentials, Service Tokens,
+consumers and value conflicts have been verified and migrated. The secure
+consolidation status, outstanding secrets and retirements are documented
+in `operations/doppler-github-actions.md`. Do not replace known-working
+forms/analytics credentials with a different value just because its key
+name matches.
 
-Credentials previously present in an over-permissive file must be rotated.
-The persistent file may be removed only after every production consumer is
-verified through Doppler.
+The protected GitHub environment token must target `main` and must be
+rotated before those old configs are retired. Do not activate production
+CMS publishing without independent data-recovery and release acceptance.
 
 ## Sentry
 

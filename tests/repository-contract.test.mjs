@@ -370,7 +370,7 @@ test("analytics observability uses canonical public config and fail-closed conse
   assert.match(workflow, /dopplerhq\/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534/);
   assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD/);
   assert.match(workflow, /inject-env-vars: true/);
-  assert.match(workflow, /node scripts\/ops\/check-fetched-doppler\.mjs prd_sismosmart/);
+  assert.match(workflow, /node scripts\/ops\/check-fetched-doppler\.mjs main/);
   assert.match(workflow, /npm run --silent ops:status/);
   assert.match(workflow, /npm run ops:analytics-admin-audit/);
   assert.match(workflow, /npm run ops:analytics-audit/);
@@ -1029,7 +1029,7 @@ test("Search Console performance documentation preserves the Doppler and privacy
   const normalizedRunbook = runbook.toLowerCase();
   for (const phrase of [
     "sismosmart-web",
-    "prd_sismosmart",
+    "main",
     "read-only",
     "Search Analytics query",
     "28-day",
@@ -1094,7 +1094,7 @@ test("only owner-reviewed production jobs receive a unified Doppler token", () =
     const body = job(name);
     assert.match(body, /name: production-deploy\n/);
     assert.match(body, /secrets\.DOPPLER_TOKEN_PRD/);
-    assert.match(body, /check-fetched-doppler\.mjs prd_sismosmart/);
+    assert.match(body, /check-fetched-doppler\.mjs main/);
     assert.equal((body.match(/secrets-fetch-action@/g) || []).length, 1);
   }
   for (const source of [health, analytics, dns, mail]) {
@@ -1119,7 +1119,7 @@ test("Doppler connectivity preflight is single-token, owner-reviewed, exact-SHA 
   assert.match(workflow, /EXPECTED_SHA.*ACTUAL_SHA/);
   assert.match(workflow, /secrets\.DOPPLER_TOKEN_PRD/);
   assert.match(workflow, /dopplerhq\/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534/);
-  assert.match(workflow, /check-fetched-doppler\.mjs prd_sismosmart/);
+  assert.match(workflow, /check-fetched-doppler\.mjs main/);
   assert.doesNotMatch(workflow, /deploy:|ops:production-health|ssh|cpanel|curl|wget|npm ci|writeFile/);
   assert.match(workflow, /persist-credentials: false/);
 });

@@ -34,14 +34,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch and mask Doppler prd_sismosmart secrets
+      - name: Fetch and mask Doppler main secrets
         uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534  # v2.0.0
         with:
           doppler-token: ${{ secrets.DOPPLER_TOKEN_PRD }}
           inject-env-vars: true
 
-      - name: Verify scoped Doppler prd_sismosmart grant
-        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
+      - name: Verify scoped Doppler main grant
+        run: node scripts/ops/check-fetched-doppler.mjs main
 
       - name: Record canonical configuration status
         shell: bash

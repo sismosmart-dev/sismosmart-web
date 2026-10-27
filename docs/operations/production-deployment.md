@@ -2,7 +2,7 @@
 
 ## Safety model
 
-Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the public-only `status` operation uses the separate, tokenless `production` environment. Only `DOPPLER_TOKEN_PRD` may be stored in GitHub `production-deploy`; SSH/cPanel/form/DNS/analytics values stay in consolidated Doppler config `prd_sismosmart`. See `doppler-github-actions.md`. The unified Doppler config and owner-reviewed manual Fetch Secrets workflow were accepted; release deployment remains disabled pending separate acceptance.
+Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the public-only `status` operation uses the separate, tokenless `production` environment. Only `DOPPLER_TOKEN_PRD` may be stored in GitHub `production-deploy`; SSH/cPanel/form/DNS/analytics values stay in consolidated Doppler config `main`. See `doppler-github-actions.md`. The unified Doppler config and owner-reviewed manual Fetch Secrets workflow were accepted; release deployment remains disabled pending separate acceptance.
 
 Use the workflow operations in this order:
 

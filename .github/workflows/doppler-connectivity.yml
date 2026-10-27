@@ -55,4 +55,4 @@ jobs:
           inject-env-vars: true
 
       - name: Verify config scope and required keys without printing values
-        run: node scripts/ops/check-fetched-doppler.mjs prd_sismosmart
+        run: node scripts/ops/check-fetched-doppler.mjs main
