@@ -10,12 +10,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { assetPaths } from "@/lib/asset-paths";
 import { appBasePath, withBasePath } from "@/lib/base-path";
 import { buildPageMetadata } from "@/lib/metadata";
-import {
-  getFooterNavigation,
-  getLayoutChromeLabels,
-  getPrimaryNavigation,
-  routeSegments,
-} from "@/lib/pages";
+import { getCmsSiteChrome } from "@/lib/content-api/chrome";
+import { routeSegments } from "@/lib/pages";
 import { getGlobalStructuredData } from "@/lib/structured-data";
 import {
   getCopy,
@@ -76,7 +72,8 @@ export default async function LocaleLayout({
   }
 
   const copy = getCopy(locale);
-  const navigation = getPrimaryNavigation(locale);
+  const chrome = await getCmsSiteChrome(locale);
+  const navigation = chrome.navigation;
   const mobileNavigation = navigation.map((item) => ({
     href: getLocalizedHref(locale, item.href),
     label: item.label,
@@ -87,8 +84,8 @@ export default async function LocaleLayout({
     label: localeLabels[entry],
     locale: entry,
   }));
-  const footerNavigation = getFooterNavigation(locale);
-  const footerLabels = getLayoutChromeLabels(locale);
+  const footerNavigation = chrome.footerNavigation;
+  const footerLabels = chrome.footerLabels;
 
   const primaryCtaHref = getLocalizedHref(locale, routeSegments.pilotProgram);
 
@@ -129,7 +126,7 @@ export default async function LocaleLayout({
                     {siteConfig.name}
                   </span>
                   <span className="text-sm text-emerald-50/70">
-                    {copy.navigation.eyebrow}
+                    {chrome.brandEyebrow}
                   </span>
                 </span>
               </a>
@@ -137,7 +134,7 @@ export default async function LocaleLayout({
               <MobileNavigation
                 closeLabel={footerLabels.close}
                 ctaHref={primaryCtaHref}
-                ctaLabel={copy.navigation.primaryCta}
+                ctaLabel={chrome.primaryCta}
                 languages={mobileLanguages}
                 menuLabel={footerLabels.menu}
                 navigation={mobileNavigation}
@@ -162,7 +159,7 @@ export default async function LocaleLayout({
                   className="hidden rounded-full border border-brand-bright/30 bg-brand-bright/10 px-4 py-2 font-semibold text-white lg:inline-flex"
                   href={primaryCtaHref}
                 >
-                  {copy.navigation.primaryCta}
+                  {chrome.primaryCta}
                 </a>
               </nav>
 
@@ -306,7 +303,7 @@ export default async function LocaleLayout({
           </div>
 
           <div className="mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm text-fg-subtle sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} {copy.footer.legal}</p>
+            <p>© {new Date().getFullYear()} {chrome.legal}</p>
             <button
               className="w-fit rounded-full border border-border px-4 py-2 text-left text-sm font-semibold text-fg-muted hover:border-[var(--primary-600)] hover:text-[var(--primary-600)]"
               data-cookie-reset=""

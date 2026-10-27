@@ -257,9 +257,14 @@ export function resolveStaticPageKey(segment: string): StaticPageKey | null {
   );
 }
 
-export function getPrimaryNavigation(locale: Locale): SiteLink[] {
-  const labels = navigationLabels[locale];
+export type NavigationCopyLabels = Record<Exclude<PageKey, "home">, string> & { guides?: string };
 
+export function getSourceNavigationLabels(locale: Locale): NavigationCopyLabels {
+  const guide = getGuideNavigationLink(locale);
+  return { ...navigationLabels[locale], ...(guide ? { guides: guide.label } : {}) };
+}
+
+export function getPrimaryNavigation(locale: Locale, labels: NavigationCopyLabels = getSourceNavigationLabels(locale)): SiteLink[] {
   return [
     { label: labels.product, href: routeSegments.product },
     { label: labels.technology, href: routeSegments.technology },
@@ -270,9 +275,7 @@ export function getPrimaryNavigation(locale: Locale): SiteLink[] {
   ];
 }
 
-export function getFooterNavigation(locale: Locale): SiteLink[] {
-  const labels = navigationLabels[locale];
-
+export function getFooterNavigation(locale: Locale, labels: NavigationCopyLabels = getSourceNavigationLabels(locale)): SiteLink[] {
   const links: SiteLink[] = [
     { label: labels.product, href: routeSegments.product },
     { label: labels.technology, href: routeSegments.technology },
@@ -289,26 +292,23 @@ export function getFooterNavigation(locale: Locale): SiteLink[] {
     { label: labels.contact, href: routeSegments.contact },
   ];
 
-  const guideLink = getGuideNavigationLink(locale);
-  if (guideLink) {
-    links.push(guideLink);
-  }
+  const guideLink = getGuideNavigationLink(locale, labels.guides);
+  if (guideLink) links.push(guideLink);
 
   return links;
 }
 
-export function getGuideNavigationLink(locale: Locale): SiteLink | null {
+export function getGuideNavigationLink(locale: Locale, label?: string): SiteLink | null {
   if (!isGuideLocale(locale)) return null;
-  if (locale === "en") return { label: "Guides", href: "/guides" };
-  if (locale === "tr") return { label: "Rehberler", href: "/guides" };
+  if (locale === "en") return { label: label ?? "Guides", href: "/guides" };
+  if (locale === "tr") return { label: label ?? "Rehberler", href: "/guides" };
   return null;
 }
 
-export function getLayoutChromeLabels(locale: Locale) {
-  // "contact" is intentionally the same string already defined in
-  // navigationLabels for this locale, reused here instead of duplicated.
+export function getLayoutChromeLabels(locale: Locale, labels: NavigationCopyLabels = getSourceNavigationLabels(locale)) {
+  // "contact" reuses the navigation label, including an approved CMS override.
   return {
     ...layoutLabels[locale],
-    contact: navigationLabels[locale].contact,
+    contact: labels.contact,
   };
 }

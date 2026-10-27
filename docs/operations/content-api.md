@@ -204,9 +204,9 @@ has the exact shape:
 
 The same per-request published document is used for displayed page introductions,
 search metadata/social previews and the page's JSON-LD descriptions; all
-other page-specific sections (e.g., FAQs, specifications, legal text and
-articles), and the shared navigation remain source-controlled and **are not
-CMS-editable yet**. Missing/invalid published overrides or an unavailable CMS
+other page-specific sections are handled by their own separately registered
+CMS documents where supported. Navigation link destinations and safety notices
+remain source-controlled. Missing/invalid published overrides or an unavailable CMS
 fall back to existing TypeScript content and do not expose drafts. Pages are
 rendered on demand after this expansion to pick up published changes without
 releasing code; this must be monitored for latency on the shared 2 GB hosting
@@ -270,9 +270,9 @@ and restore the original TypeScript content.
 JSON shape, length and markup checks cannot verify scientific or legal facts.
 Authorizing users must apply the technical claims register and editorial
 review. Reference lists and source links cannot be silently changed through
-this API. Guide hub summaries/navigation, shared footer/nav, detailed product
-specifications, home page sections, and about/contact page bodies remain in
-code until their own verified migrations. Existing source-controlled guide
+this API. Guide hub, shared footer/navigation text, detailed product sections,
+home sections and about/contact body copy have separately registered CMS
+keys; route destinations, citations and safety notices remain in source. Existing source-controlled guide
 `updatedAt` dates are not automatically advanced by this first CMS integration;
 publication-time metadata handling needs explicit acceptance before live edits.
 
@@ -301,10 +301,10 @@ content flows through the existing resolved page copy. These fields must be
 editorially reviewed before publishing device or structural safety claims.
 The long documents use the already-bounded 128 KiB admin request ceiling.
 
-Outstanding content after these extensions includes homepage content blocks,
-shared navigation and footer strings, contact form/channels, and guide hub
-listing presentation. Live SQL backup and release acceptance are still required
-before any editor API can be enabled in production.
+Other CMS keys now cover homepage blocks, shared header/footer display text,
+contact form labels and guide hub presentation. Their link destinations,
+submission logic and safety notices remain source-controlled. Live SQL backup
+and release acceptance are still required to enable production editing.
 
 ### Home sections, contact form labels and guide hub listings
 
@@ -331,6 +331,27 @@ Guide hub copy remains under the small-document 8 KiB limit. `CMS_DB_ENABLED`
 and `CMS_WRITE_ENABLED` remain disabled until verified real live backup,
 off-host retention, independent restore, scoped database grants and reviewed
 production release. A merged PR alone does not activate a live content editor.
-Shared navigation link labels and globally rendered footer/header text still
-use locale source-controlled copy pending a separate low-overhead integration;
-do not claim every possible site string is API-editable yet.
+Shared navigation and footer display text are covered by the separately
+registered `site.chrome` document below, but link destinations, operational
+controls, consent behavior and safety notices remain source-controlled.
+
+### Shared navigation and footer text (staged)
+
+`site.chrome` is a locale-scoped protected authoring document for the six languages.
+It contains `navigation.eyebrow`, `navigation.primaryCta`, and
+`navigation.labels` for the 13 existing static page destinations, with optional
+`guides` for English/Turkish, plus `footer.note`, `footer.explore`, and
+`footer.legal`. All document values are bounded plain text; there is no API
+control of link URLs, email/social destinations, locale-switch targets, brand
+identity, safety/product-stage warnings or functional accessibility controls.
+
+The existing authenticated draft/publish/rollback API supports this key.
+Publishing revalidates the locale layout. The server checks published layout
+copy only while CMS is enabled and uses a bounded five-second per-worker cache
+(maximum six locales) to avoid a query per page view. A server refresh may see
+previous copy until this small TTL expires; Next.js client navigation can reuse
+already rendered layouts, so refresh an open tab to see a new publication.
+If CMS is unavailable or disabled, original source-controlled copy is used.
+A rollback to version zero resets the locale to source copy. Editorial approval
+is still required for footer legal wording, and real production throughput and
+publication freshness must be accepted before enabling CMS content writes.
