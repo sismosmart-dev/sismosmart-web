@@ -3,7 +3,7 @@ import { getGuideBySlug, getGuideCanonicalPath } from "@/lib/guides/catalog";
 import { renderGuideMarkdown } from "@/lib/guides/markdown";
 import { siteConfig } from "@/lib/site";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return getDetailStaticParams();
@@ -30,7 +30,9 @@ export async function GET(
     return notFoundResponse();
   }
 
-  const guide = getGuideBySlug(resolved.locale, resolved.slug);
+  const guide = process.env.CMS_DB_ENABLED === "true"
+    ? await (await import("@/lib/content-api/guides")).getCmsGuide(resolved.locale, resolved.slug)
+    : getGuideBySlug(resolved.locale, resolved.slug);
   if (!guide) {
     return notFoundResponse();
   }
@@ -40,7 +42,7 @@ export async function GET(
 
   return new Response(renderGuideMarkdown(guide), {
     headers: {
-      "cache-control": "public, max-age=3600",
+      "cache-control": "public, max-age=0, must-revalidate",
       "content-type": "text/markdown; charset=utf-8",
       link: `<${canonicalUrl}>; rel="canonical"`,
       vary: "Accept",

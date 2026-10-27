@@ -19,7 +19,7 @@ const draftPayload = z.strictObject({
 const publishPayload = z.strictObject({ expectedVersion: z.number().int().min(0) });
 const rollbackPayload = z.strictObject({
   expectedVersion: z.number().int().min(0),
-  targetVersion: z.number().int().min(1),
+  targetVersion: z.number().int().min(0),
 });
 
 type RouteContext = { params: Promise<{ locale: string; key: string }> };
@@ -39,7 +39,10 @@ export async function executeCmsAdmin(request: Request, context: RouteContext, a
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
     return reply("JSON_REQUIRED", 415);
   }
-  const body = await readLimitedJsonBody(request, 8_192);
+  // FAQ/legal cards and long-form guides exceed the original 8 KiB hero cap.
+  // Keep a per-document hard limit to avoid unbounded admin request bodies.
+  const maxBytes = key.startsWith("guide.") ? 65_536 : key.endsWith(".sections") || key.endsWith(".details") ? 131_072 : 8_192;
+  const body = await readLimitedJsonBody(request, maxBytes);
   if (!body.ok) return reply(body.code, body.code === "PAYLOAD_TOO_LARGE" ? 413 : 400);
   const parsed = (action === "draft" ? draftPayload : action === "publish" ? publishPayload : rollbackPayload).safeParse(body.value);
   if (!parsed.success) return reply("VALIDATION_FAILED", 400);

@@ -234,3 +234,72 @@ Before activation, test a real approved publication in both HTML and the
 matching Markdown alternative, including canonical headers, SEO metadata and
 JSON-LD. The route still requires the usual backup/grant/production release
 acceptance; passing a static no-database Markdown test alone is insufficient.
+
+## Editorial section and guide body documents (staged)
+
+The second expansion adds `page.<pageKey>.sections` to nine plain-text
+card/FAQ/policy pages: `faq`, `privacy`, `terms`, `security`, `glossary`,
+`technology`, `pilotProgram`, `investors`, and `press`. The document is
+`{"sections":[{"title":"...","description":"..."}]}`; section content is
+rendered consistently in page HTML, FAQ JSON-LD and Markdown alternatives.
+Each of the nine keys is available in all six site languages (54 separate
+localized documents). Dynamic display uses the existing TypeScript fallback
+and never reads an unpublished draft. Product specifications, charts, contact
+forms, buttons and links are intentionally unaffected.
+
+Six guide translation keys each have a `guide.<translationKey>.body` document
+for English (`en`) and Turkish (`tr`): 12 guide-body records. The editable
+schema contains `title`, `description`, `eyebrow`, `h1`, `summary`,
+`keyTakeaways`, `sections` (heading/paragraphs/optional bullets),
+`limitations` and `sismosmartFit`. Canonical slug, locale, source references,
+related guides, publication timestamps, safety notice and CTA target remain
+controlled by the repository. The same validated published guide body feeds
+HTML, metadata, article JSON-LD, and the Markdown guide alternative. The
+latter uses on-demand rendering and `Cache-Control: public, max-age=0,
+must-revalidate`; public site visitors will never see private revisions.
+
+Authoring requests for guide documents are bounded to 64 KiB and editorial
+section documents to 128 KiB; small intro/hero documents retain the 8 KiB
+limit. The draft/publish/rollback API remains feature-gated. The rollback
+payload correctly permits `targetVersion: 0` to remove the published override
+and restore the original TypeScript content.
+
+**Review before accepting edited guide claims or legal/security copy:** strict
+JSON shape, length and markup checks cannot verify scientific or legal facts.
+Authorizing users must apply the technical claims register and editorial
+review. Reference lists and source links cannot be silently changed through
+this API. Guide hub summaries/navigation, shared footer/nav, detailed product
+specifications, home page sections, and about/contact page bodies remain in
+code until their own verified migrations. Existing source-controlled guide
+`updatedAt` dates are not automatically advanced by this first CMS integration;
+publication-time metadata handling needs explicit acceptance before live edits.
+
+All these changes are dormant until real production cPanel SQL backup,
+off-host retention, isolated restore, scoped grants and a protected production
+release have been verified. No database administration or provider support
+requests should be launched implicitly as part of this code change.
+
+### Product, how-it-works and about page details
+
+A further three registered keys cover the remaining explanatory sections of
+`product`, `howItWorks` and `about` in all six locales (18 additional records):
+
+- `page.product.details`: device/meter description, image alt text, specifications,
+  use cases, comparison headings and rows, and CTA display label. The actual
+  CTA destination stays in source control.
+- `page.howItWorks.details`: process steps, signal explanations, and connectivity
+  cards.
+- `page.about.details`: story, editorial principles, timeline and public team
+  descriptions.
+
+Only plain text and bounded, strictly typed lists are accepted. Embedded HTML,
+custom URLs, unexpected fields and external actions are rejected. The current
+source copy remains the safe fallback and all HTML/Markdown/SEO/structured
+content flows through the existing resolved page copy. These fields must be
+editorially reviewed before publishing device or structural safety claims.
+The long documents use the already-bounded 128 KiB admin request ceiling.
+
+Outstanding content after these extensions includes homepage content blocks,
+shared navigation and footer strings, contact form/channels, and guide hub
+listing presentation. Live SQL backup and release acceptance are still required
+before any editor API can be enabled in production.
