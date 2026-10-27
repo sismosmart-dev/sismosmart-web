@@ -2,7 +2,7 @@ import { resolveHubLocale, getHubStaticParams } from "@/lib/guides/routing";
 import { renderGuideHubMarkdown } from "@/lib/guides/markdown";
 import { siteConfig } from "@/lib/site";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return getHubStaticParams();
@@ -30,10 +30,13 @@ export async function GET(
   }
 
   const canonicalUrl = `${siteConfig.url}/${resolved}/guides`;
+  const content = process.env.CMS_DB_ENABLED === "true"
+    ? await (await import("@/lib/content-api/guide-hub")).getCmsGuideHub(resolved)
+    : undefined;
 
-  return new Response(renderGuideHubMarkdown(resolved), {
+  return new Response(renderGuideHubMarkdown(resolved, content), {
     headers: {
-      "cache-control": "public, max-age=3600",
+      "cache-control": "public, max-age=0, must-revalidate",
       "content-type": "text/markdown; charset=utf-8",
       link: `<${canonicalUrl}>; rel="canonical"`,
       vary: "Accept",

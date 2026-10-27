@@ -8,15 +8,14 @@ import {
   getGuideMarkdownPath,
   getGuideHub,
 } from "@/lib/guides/catalog";
-import type { GuideContent, GuideLocale } from "@/lib/guides/types";
+import type { GuideContent, GuideHubCopy, GuideLocale } from "@/lib/guides/types";
 
 const openGraphLocales: Record<GuideLocale, string> = {
   en: "en_US",
   tr: "tr_TR",
 };
 
-export function buildGuideHubMetadata(locale: GuideLocale): Metadata {
-  const hub = getGuideHub(locale);
+export function buildGuideHubMetadata(locale: GuideLocale, hub: GuideHubCopy = getGuideHub(locale)): Metadata {
   const canonicalPath = `/${locale}/guides`;
   const canonical = `${siteConfig.url}${canonicalPath}`;
   const markdownPath = `/${locale}/guides.md`;

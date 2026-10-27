@@ -303,3 +303,32 @@ Outstanding content after these extensions includes homepage content blocks,
 shared navigation and footer strings, contact form/channels, and guide hub
 listing presentation. Live SQL backup and release acceptance are still required
 before any editor API can be enabled in production.
+
+### Home sections, contact form labels and guide hub listings
+
+The final public-copy expansion in this batch adds:
+
+- `home.sections` across all six locales: secondary hero labels/specification
+  captions, trust indicators, process steps, feature cards, signal demonstration
+  copy, evidence cards, homepage FAQ, and newsletter form labels/messages.
+  The existing `home.hero`/`home.meta` keys still control the homepage heading
+  and metadata, while CTA destination hrefs stay in source control.
+- `page.contact.copy` across six locales: visible channel labels/descriptions
+  and the validated contact form labels and status messages. Channel URL/mailto
+  hrefs and API submission logic are **not** editable. A mismatched channel
+  count is rejected at merge time in favor of known-good source content.
+- `guides.hub` for English and Turkish, including directory headings and intro.
+  Its HTML, SEO, JSON-LD, and Markdown frontmatter use one published record.
+  Hub cards also read each already validated published guide heading/description
+  rather than showing outdated source-controlled cards after guide publication;
+  their link targets remain canonical. The hub Markdown alternative is
+  dynamically rendered with no persistent hour-long stale cache.
+
+Long homepage/contact documents retain a strict 128 KiB admin request ceiling.
+Guide hub copy remains under the small-document 8 KiB limit. `CMS_DB_ENABLED`
+and `CMS_WRITE_ENABLED` remain disabled until verified real live backup,
+off-host retention, independent restore, scoped database grants and reviewed
+production release. A merged PR alone does not activate a live content editor.
+Shared navigation link labels and globally rendered footer/header text still
+use locale source-controlled copy pending a separate low-overhead integration;
+do not claim every possible site string is API-editable yet.
