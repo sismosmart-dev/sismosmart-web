@@ -1123,3 +1123,29 @@ test("Doppler connectivity preflight is single-token, owner-reviewed, exact-SHA 
   assert.doesNotMatch(workflow, /deploy:|ops:production-health|ssh|cpanel|curl|wget|npm ci|writeFile/);
   assert.match(workflow, /persist-credentials: false/);
 });
+
+
+test("Renovate reduces PR bursts without suppressing security or mainline checks", () => {
+  const renovate = readJson("renovate.json");
+  assert.equal(renovate.timezone, "Europe/Istanbul");
+  assert.equal(renovate.updateNotScheduled, false);
+  assert.ok(renovate.prConcurrentLimit <= 2);
+  assert.ok(renovate.branchConcurrentLimit <= 2);
+  assert.ok(renovate.prHourlyLimit <= 1);
+  assert.ok(renovate.schedule.length > 0);
+  assert.ok(renovate.extends.includes("helpers:pinGitHubActionDigests"));
+  assert.ok(renovate.packageRules.some((rule) => rule.groupName && rule.matchUpdateTypes.includes("patch") && rule.matchUpdateTypes.includes("digest")));
+});
+
+test("only main pushes and PRs trigger expensive quality and security workflows", () => {
+  for (const path of [".github/workflows/quality-ci.yml", ".github/workflows/security.yml"]) {
+    const workflow = readText(path);
+    assert.match(workflow, /push:\s*\n\s*branches:\s*\n\s*- main/);
+    const pushBlock = workflow.split("  push:")[1].split("  pull_request:")[0];
+    assert.doesNotMatch(pushBlock, /develop|feature|fix\/|chore\/|oaslananka\//);
+    assert.match(workflow, /cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}/);
+  }
+  for (const path of [".github/workflows/pr-commitlint.yml", ".github/workflows/label.yml"]) {
+    assert.match(readText(path), /concurrency:/);
+  }
+});

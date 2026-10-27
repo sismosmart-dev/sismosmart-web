@@ -157,8 +157,10 @@ test("mainline workflow delegates to the tested verifier with read-only permissi
   const workflow = readText(".github/workflows/mainline-policy.yml");
 
   assert.match(workflow, /NODE_VERSION: "22\.18\.0"/);
-  assert.match(workflow, /actions\/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10/);
-  assert.match(workflow, /actions\/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e/);
+  // Renovate may safely advance an action to a NEW full SHA. Enforce the
+  // immutable 40-character pin, not a stale specific action release.
+  assert.match(workflow, /actions\/checkout@[a-f0-9]{40}(?=\s|$)/);
+  assert.match(workflow, /actions\/setup-node@[a-f0-9]{40}(?=\s|$)/);
   assert.match(workflow, /GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(workflow, /node scripts\/ci\/verify-mainline-pr-origin\.mjs/);
   assert.match(workflow, /contents: read/);

@@ -1,5 +1,42 @@
 {
   "extends": [
     "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "Europe/Istanbul",
+  "schedule": [
+    "before 5am on monday"
+  ],
+  "updateNotScheduled": false,
+  "prConcurrentLimit": 2,
+  "branchConcurrentLimit": 2,
+  "prHourlyLimit": 1,
+  "rebaseWhen": "behind-base-branch",
+  "packageRules": [
+    {
+      "description": "One weekly PR for compatible minor, patch, digest and pin updates instead of one PR per dependency",
+      "matchPackageNames": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest"
+      ],
+      "groupName": "weekly non-major dependency updates",
+      "groupSlug": "weekly-non-major"
+    },
+    {
+      "description": "Keep major upgrades separately visible and subject to the same two-PR limit",
+      "matchPackageNames": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": "major dependency upgrades",
+      "groupSlug": "major-upgrades"
+    }
   ]
 }
