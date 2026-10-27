@@ -1,3 +1,4 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import { FrequencyTrend } from "@/components/frequency-trend";
 import { PageHero } from "@/components/page-hero";
 import { SectionHeading } from "@/components/section-heading";
@@ -83,11 +84,13 @@ const frequencyTrendLabels: Record<
 export function InfoPage({
   locale,
   pageKey,
+  pages,
 }: {
   locale: Locale;
   pageKey: InfoPageKey;
+  pages?: RoutePagesCopy;
 }) {
-  const page = getPages(locale)[pageKey];
+  const page = (pages ?? getPages(locale))[pageKey];
   const trend = pageKey === "technology" ? frequencyTrendLabels[locale] : null;
 
   return (

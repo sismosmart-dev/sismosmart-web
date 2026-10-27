@@ -178,3 +178,40 @@ then restore that copy into a separately provisioned test database and observe
 successful recurring retention. Only then consider creating CMS tables,
 scoped runtime grants and enabling `CMS_DB_ENABLED`/`CMS_WRITE_ENABLED` under
 the existing GitHub environment review.
+
+## Static-subpage introduction and SEO coverage (staged)
+
+In addition to `home.hero` / `home.meta`, the first content expansion registers a
+`page.<pageKey>.intro` document for each of the **13 static subpage keys**:
+`product`, `technology`, `howItWorks`, `pilotProgram`, `investors`, `faq`,
+`about`, `contact`, `privacy`, `terms`, `security`, `press`, and `glossary`.
+Each key supports the same six supported locales. The validated JSON document
+has the exact shape:
+
+```json
+{
+  "eyebrow": "A short label",
+  "title": "A heading for this page",
+  "description": "An accurate introduction",
+  "meta": {
+    "title": "Search listing title | SismoSmart",
+    "description": "The search listing description"
+  }
+}
+```
+
+The same per-request published document is used for displayed page introductions,
+search metadata/social previews and the page's JSON-LD descriptions; all
+other page-specific sections (e.g., FAQs, specifications, legal text and
+articles), and the shared navigation remain source-controlled and **are not
+CMS-editable yet**. Missing/invalid published overrides or an unavailable CMS
+fall back to existing TypeScript content and do not expose drafts. Pages are
+rendered on demand after this expansion to pick up published changes without
+releasing code; this must be monitored for latency on the shared 2 GB hosting
+plan. `CMS_DB_ENABLED` and `CMS_WRITE_ENABLED` remain off in production until
+backup/permissions/owner-reviewed release gates are fully satisfied.
+
+As with the home page, changes affecting legal, earthquake-safety or product
+performance claims require evidence and manual editorial review; a valid JSON
+schema is not, by itself, proof that a claim is acceptable. URL fields and
+arbitrary HTML are not editable through this intro document.

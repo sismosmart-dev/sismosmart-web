@@ -1,3 +1,4 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import Image from "next/image";
 
 import { PageHero } from "@/components/page-hero";
@@ -6,8 +7,8 @@ import { withBasePath } from "@/lib/base-path";
 import { getPages } from "@/lib/pages";
 import type { Locale } from "@/lib/site";
 
-export function PilotProgramPage({ locale }: { locale: Locale }) {
-  const page = getPages(locale).pilotProgram;
+export function PilotProgramPage({ locale, pages }: { locale: Locale; pages?: RoutePagesCopy }) {
+  const page = pages?.pilotProgram ?? getPages(locale).pilotProgram;
 
   return (
     <main className="flex flex-1 flex-col gap-8 pb-16 pt-8 sm:gap-10 sm:pt-10" id="content">

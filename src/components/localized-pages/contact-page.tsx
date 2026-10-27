@@ -1,3 +1,4 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import { ContactForm } from "@/components/contact-form";
 import { PageHero } from "@/components/page-hero";
 import { SectionHeading } from "@/components/section-heading";
@@ -5,8 +6,8 @@ import { withBasePath } from "@/lib/base-path";
 import { getPages } from "@/lib/pages";
 import type { Locale } from "@/lib/site";
 
-export function ContactPage({ locale }: { locale: Locale }) {
-  const page = getPages(locale).contact;
+export function ContactPage({ locale, pages }: { locale: Locale; pages?: RoutePagesCopy }) {
+  const page = pages?.contact ?? getPages(locale).contact;
 
   return (
     <main className="flex flex-1 flex-col gap-8 pb-16 pt-8 sm:gap-10 sm:pt-10" id="content">

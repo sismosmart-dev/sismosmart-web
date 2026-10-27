@@ -1,9 +1,10 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import { PageHero } from "@/components/page-hero";
 import { getPages } from "@/lib/pages";
 import type { Locale } from "@/lib/site";
 
-export function FaqPage({ locale }: { locale: Locale }) {
-  const page = getPages(locale).faq;
+export function FaqPage({ locale, pages }: { locale: Locale; pages?: RoutePagesCopy }) {
+  const page = pages?.faq ?? getPages(locale).faq;
 
   return (
     <main className="flex flex-1 flex-col gap-8 pb-16 pt-8 sm:gap-10 sm:pt-10" id="content">
