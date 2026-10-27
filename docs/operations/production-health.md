@@ -128,3 +128,36 @@ the single Doppler config has deployment-capable credentials. Do not claim
 that public-only checks are a privilege-equivalent replacement for historical
 private audits. The old scheduled health workflow must remain active until the
 monitoring scope and reduced automated coverage are explicitly accepted.
+
+## Monitoring controller handoff (required before old repository deletion)
+
+Old `SismoSmart/sismosmart-web` schedule coverage is wider than just website
+health: it includes 6-hour production health, daily DNS/mail/Lighthouse,
+weekly analytics and security, and daily stale-management. **Do not disable**
+those jobs merely because the new public-only checker is green.
+
+In the new repository, `Public Health` can probe eight HTTPS routes every six
+hours and `Lighthouse` can audit web experience weekly. They require **no**
+Doppler token, DNS origin address or SSH/cPanel credential; both are opt-in
+for scheduled runs using `SISMOSMART_PUBLIC_MONITOR_ENABLED=true`. The
+Lighthouse workflow must remain `disabled_manually` until final handoff,
+otherwise re-enabling it too early would create duplicate scheduled audits.
+The opt-in flag is set only once the original monitor is being retired.
+
+The protected `production-deploy` deep read-only workflows are manual only:
+Production Health, DNS Cutover Audit, Mail DNS Audit and Analytics
+Observability. The unified Doppler config contains production-write-capable
+SSH/cPanel credentials, so passing those credentials to unattended cron jobs
+is not an acceptable equivalent of the old monitoring topology. Before
+decommissioning the old repo, either supply **separate, least-privileged**
+read-only monitoring credentials and test equivalent scheduled workflows or
+explicitly accept reduced unattended monitoring. There is currently no proof
+of equivalence for private origin, SMTP TLS, provider capacity and analytics
+API checks.
+
+Cutover acceptance must document: working production deployment on exact SHA,
+form/TLS/DNS/analytics checks, verified rollback, monitored trial under the
+new controller, whether failures create actionable alerts, no legacy deploy
+trigger or external credential consumer, and valid old-organization admin
+permission. The **last** action is deletion of the old repository; deletion
+is not an acceptable test of the migration.
