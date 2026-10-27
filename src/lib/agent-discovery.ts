@@ -1,3 +1,4 @@
+import type { PageMeta } from "@/lib/page-copy";
 import {
   getPages,
   resolveStaticPageKey,
@@ -47,13 +48,14 @@ function getPageMeta(locale: Locale, pageKey: AgentPageKey) {
 export function getAgentPageDescriptor(
   locale: Locale,
   pageKey: AgentPageKey,
+  publishedMeta?: PageMeta,
 ): AgentPageDescriptor {
   const segment = routeSegments[pageKey];
   const canonicalPath =
     pageKey === "home" ? `/${locale}` : `/${locale}${segment}`;
   const markdownPath =
     pageKey === "home" ? `/${locale}.md` : `${canonicalPath}.md`;
-  const meta = getPageMeta(locale, pageKey);
+  const meta = publishedMeta ?? getPageMeta(locale, pageKey);
 
   return {
     pageKey,

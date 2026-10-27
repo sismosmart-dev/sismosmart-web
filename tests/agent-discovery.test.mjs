@@ -126,7 +126,7 @@ test("localized Markdown route renders current page copy and rejects unsupported
 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "text/markdown; charset=utf-8");
-  assert.match(response.headers.get("cache-control") ?? "", /max-age=3600/);
+  assert.match(response.headers.get("cache-control") ?? "", /max-age=0/);
   assert.match(body, new RegExp(`^# ${getPages("en").product.meta.title}`, "m"));
   assert.match(body, new RegExp(getPages("en").product.deviceDescription.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(body, /https:\/\/sismosmart\.com\/en\/product/);

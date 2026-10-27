@@ -1,3 +1,4 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import type {
   AboutPageCopy,
   ContactPageCopy,
@@ -19,6 +20,7 @@ import {
   safetyNotices,
   siteConfig,
   type Locale,
+  type SiteCopy,
 } from "@/lib/site";
 
 type StructureLabels = {
@@ -274,8 +276,7 @@ ${page.form.note}
 The form collects the public fields shown on the canonical HTML page and sends them only after validation and consent.`;
 }
 
-function renderHomePage(locale: Locale) {
-  const copy = getCopy(locale);
+function renderHomePage(locale: Locale, copy = getCopy(locale)) {
   const labels = structureLabels[locale];
   const stats = copy.hero.stats
     .map((item) => `- **${item.label}:** ${item.value}`)
@@ -344,12 +345,12 @@ ${copy.faq.description}
 ${faq}`;
 }
 
-function renderPageBody(locale: Locale, pageKey: AgentPageKey) {
+function renderPageBody(locale: Locale, pageKey: AgentPageKey, publishedPages?: RoutePagesCopy, publishedHome?: SiteCopy) {
   if (pageKey === "home") {
-    return renderHomePage(locale);
+    return renderHomePage(locale, publishedHome);
   }
 
-  const page = getPages(locale)[pageKey];
+  const page = (publishedPages ?? getPages(locale))[pageKey];
   if (pageKey === "product") {
     return renderProductPage(locale, page as ProductPageCopy);
   }
@@ -368,8 +369,10 @@ function renderPageBody(locale: Locale, pageKey: AgentPageKey) {
 export function renderAgentPageMarkdown(
   locale: Locale,
   pageKey: AgentPageKey,
+  resolved?: { pages?: RoutePagesCopy; homeCopy?: SiteCopy },
 ) {
-  const descriptor = getAgentPageDescriptor(locale, pageKey);
+  const meta = pageKey === "home" ? resolved?.homeCopy?.meta : resolved?.pages?.[pageKey].meta;
+  const descriptor = getAgentPageDescriptor(locale, pageKey, meta);
   const labels = structureLabels[locale];
   const glossaryUrl = `${siteConfig.url}/${locale}/glossary`;
 
@@ -387,7 +390,7 @@ last_updated: "${agentContentLastUpdated}"
 
 ${labels.canonical}: [${descriptor.canonicalUrl}](${descriptor.canonicalUrl})
 
-${renderPageBody(locale, pageKey)}
+${renderPageBody(locale, pageKey, resolved?.pages, resolved?.homeCopy)}
 
 ## ${labels.terminology}
 
