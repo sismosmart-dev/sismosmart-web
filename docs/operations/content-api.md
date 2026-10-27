@@ -215,3 +215,22 @@ As with the home page, changes affecting legal, earthquake-safety or product
 performance claims require evidence and manual editorial review; a valid JSON
 schema is not, by itself, proof that a claim is acceptable. URL fields and
 arbitrary HTML are not editable through this intro document.
+
+### Markdown and AI-facing content consistency
+
+Each localized homepage and static subpage also exposes a canonical Markdown
+alternative (`/<locale>.md` or `/<locale>/<page>.md`). Once the CMS is activated,
+the localized Markdown handler reads the **same published content override** as
+the corresponding HTML page, including SEO/frontmatter title and description,
+visible page introduction and homepage hero text. With CMS disabled, Markdown
+uses the original TypeScript content without opening SQL connections. To avoid
+stale machine-readable content following an authorized CMS publication,
+localized Markdown responses are rendered dynamically and use
+`Cache-Control: public, max-age=0, must-revalidate`. The separate Markdown
+navigation index retains stable source-controlled labels and links; it does
+not expose unpublished drafts or claim to be an always-live CMS listing.
+
+Before activation, test a real approved publication in both HTML and the
+matching Markdown alternative, including canonical headers, SEO metadata and
+JSON-LD. The route still requires the usual backup/grant/production release
+acceptance; passing a static no-database Markdown test alone is insufficient.

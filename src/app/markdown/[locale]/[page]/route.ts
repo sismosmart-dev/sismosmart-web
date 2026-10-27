@@ -7,7 +7,8 @@ import { renderAgentPageMarkdown } from "@/lib/markdown-content";
 import { routeSegments } from "@/lib/pages";
 import { locales } from "@/lib/site";
 
-export const dynamic = "force-static";
+// CMS content changes must be visible in Markdown without a new deployment.
+export const dynamic = "force-dynamic";
 
 type MarkdownRouteContext = {
   params: Promise<{ locale: string; page: string }>;
@@ -39,12 +40,26 @@ export async function GET(
     return notFoundResponse();
   }
 
-  const descriptor = getAgentPageDescriptor(resolved.locale, resolved.pageKey);
+  // Lazy imports preserve the original, dependency-free Markdown route while
+  // the production CMS flag is disabled. No SQL is contacted in this mode.
+  let pages;
+  let homeCopy;
+  if (process.env.CMS_DB_ENABLED === "true") {
+    if (resolved.pageKey === "home") {
+      const { getHomeCopy } = await import("@/lib/content-api/home");
+      homeCopy = await getHomeCopy(resolved.locale);
+    } else {
+      const { getCmsSubpageCopy } = await import("@/lib/content-api/subpages");
+      pages = await getCmsSubpageCopy(resolved.locale, resolved.pageKey);
+    }
+  }
+  const metadata = resolved.pageKey === "home" ? homeCopy?.meta : pages?.[resolved.pageKey].meta;
+  const descriptor = getAgentPageDescriptor(resolved.locale, resolved.pageKey, metadata);
   return new Response(
-    renderAgentPageMarkdown(resolved.locale, resolved.pageKey),
+    renderAgentPageMarkdown(resolved.locale, resolved.pageKey, { pages, homeCopy }),
     {
       headers: {
-        "cache-control": "public, max-age=3600",
+        "cache-control": "public, max-age=0, must-revalidate",
         "content-type": "text/markdown; charset=utf-8",
         link: `<${descriptor.canonicalUrl}>; rel="canonical"`,
         vary: "Accept",
