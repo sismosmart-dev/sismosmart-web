@@ -10,6 +10,15 @@ The SismoSmart website currently has six locale-specific TypeScript content sour
 - cPanel's Backup screen reports **no automatically generated account backup**; a download option for the database exists. The account's Cron Jobs screen reports **no cron jobs**. A **restorable off-site SQL backup process** must be tested before accepting content writes in production.
 - No existing content database driver is in the current live application. `mysql2/promise` is included here for future protected runtime reads/writes; no connection is attempted while `CMS_DB_ENABLED` is absent/false.
 
+**2026-10-28 schema update:** The owner confirmed the production database
+was empty, and the two additive `cms_content` and `cms_revision` tables
+have since been created through the authenticated cPanel SQL interface.
+Both tables were verified empty and the public 8-route health probe passed.
+**A real production backup and independent restoration remain unverified**,
+so the backup/retention and guarded release requirements below still apply
+before enabling CMS writes. The canonical Doppler target is `main`; the
+separate older configs must remain until their consumers are migrated.
+
 ## Schema and safe activation sequence
 
 1. Independently verify the active database is still empty and make/export a tested backup before any DDL. Do not assume a future zero-byte display means there are zero tables.

@@ -11,16 +11,16 @@ const combined = Object.fromEntries(
 const scoped = {
   ...combined,
   DOPPLER_PROJECT: "sismosmart-web",
-  DOPPLER_CONFIG: "prd_sismosmart",
+  DOPPLER_CONFIG: "main",
 };
 
 test("one production config can satisfy all contracted required keys", () => {
-  assert.equal(checkFetchedDoppler("prd_sismosmart", scoped), true);
+  assert.equal(checkFetchedDoppler("main", scoped), true);
 });
 
 test("a missing, mistaken or incomplete unified config fails closed", () => {
-  assert.throws(() => checkFetchedDoppler("prd_sismosmart", {}), /wrong scope/);
-  assert.throws(() => checkFetchedDoppler("prd_sismosmart", {...scoped, DOPPLER_CONFIG: "main"}), /wrong scope/);
-  assert.throws(() => checkFetchedDoppler("prd_sismosmart", {...scoped, DNS_ORIGIN_IPV4: ""}), /DNS_ORIGIN_IPV4/);
+  assert.throws(() => checkFetchedDoppler("main", {}), /wrong scope/);
+  assert.throws(() => checkFetchedDoppler("main", {...scoped, DOPPLER_CONFIG: "prd_ops"}), /wrong scope/);
+  assert.throws(() => checkFetchedDoppler("main", {...scoped, DNS_ORIGIN_IPV4: ""}), /DNS_ORIGIN_IPV4/);
   assert.throws(() => checkFetchedDoppler("prd_ops", scoped), /Unapproved/);
 });

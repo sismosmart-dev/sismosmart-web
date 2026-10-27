@@ -38,7 +38,7 @@ from the repository owner before any workflow can fetch production credentials.
 
 ## Secret isolation
 
-One Doppler config (`prd_sismosmart`) contains all deployment and operations
+One Doppler config (`main`) contains all deployment and operations
 secret values. GitHub only holds `DOPPLER_TOKEN_PRD` in `production-deploy`,
 scoped to Doppler **Read**. That token can still read privileged deployment
 SSH/cPanel credentials, so *all* jobs that use it are owner-reviewed and

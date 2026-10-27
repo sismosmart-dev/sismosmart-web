@@ -3,15 +3,15 @@ import { spawnSync } from "node:child_process";
 import { DOPPLER_PROJECT } from "../../config/doppler-contract.mjs";
 
 export const REFRESH_TOKEN_NAME = "GOOGLE_OAUTH_REFRESH_TOKEN";
-export const REFRESH_TOKEN_CONFIG = "prd_sismosmart";
+export const REFRESH_TOKEN_CONFIG = "main";
 
 /**
- * Stores a Google OAuth refresh token in the Doppler prd_sismosmart config.
+ * Stores a Google OAuth refresh token in the Doppler main config.
  *
  * The value goes to the Doppler CLI through stdin only. It is never placed in
  * argv, written to a file, or echoed, which keeps the production-only model
  * (no persistent .env) intact. Requires an authorized Doppler session with
- * write access to prd_sismosmart.
+ * write access to main.
  */
 export function storeRefreshToken(refreshToken, run = spawnSync) {
   if (!refreshToken) {

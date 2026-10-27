@@ -1,92 +1,78 @@
 # One Doppler config for SismoSmart
 
-## Target: one config, one GitHub Service Token
+## Canonical target and security boundary
 
-Doppler project: `sismosmart-web`. Production config: `prd_sismosmart`
-(in Doppler's `prd` environment; config names must use its `prd_` prefix).
-The source of truth for all runtime SSH, cPanel, forms, analytics, DNS and
-release credentials is this **single config**. Do not place those values in
-GitHub Secrets, source files or workflow logs.
+Doppler project: `sismosmart-web`. **The only target config is `main`.**
+CI and unreviewed status tasks remain token-free. Production SSH, cPanel,
+forms, CMS, analytics and DNS credentials may be fetched only by jobs gated
+by the GitHub `production-deploy` environment's required reviewer approval.
 
-GitHub has **one user-managed secret name**:
+The approved GitHub secret location is exclusively the `production-deploy`
+environment, under `DOPPLER_TOKEN_PRD`. That secret must be a **read-only
+Doppler Service Token scoped to `main`**, not a workspace/CLI token. Never
+expose it in `production`, repository-level secrets, logs or source control.
+The existing protected environment, exact-main-SHA production gate and
+manual deployment approval remain in effect. Consolidating the config does
+**not** authorize production deployment or CMS content publication.
 
-| GitHub environment | Secret | Effect |
-| --- | --- | --- |
-| `production-deploy` (main-only, owner approval) | `DOPPLER_TOKEN_PRD` | Read-only access to **all** secrets in Doppler `prd_sismosmart` |
-| `production` (main-only, no review) | **No user-managed secrets** | Public-route status only; no privileged host inspection |
+## Observed migration status (2026-10-28; verify live before retiring anything)
 
-This is one Doppler **config**, not one config for each job. CI is intentionally
-tokenless: public metadata/build variables are committed or ordinary public
-GitHub variables, and no pull request can read production secrets. Doppler's
-Service Token **Read** permission prevents editing Doppler, but can read every
-secret in that config (including write-capable SSH/cPanel/API credentials).
-Therefore only reviewer-approved jobs may fetch it.
+The `main` config already held 52 names before consolidation. `PUBLIC_BASE_URL`
+was successfully copied into `main` from a second config, with no value
+printed. Other required fields have **not yet been migrated and verified**:
+`CMS_DB_HOST`, `CMS_DB_NAME`, `CMS_DB_USER`, `CMS_DB_PASSWORD`, and
+`DNS_ORIGIN_IPV4`. The former root configs `ci`, `prd_app`, `prd_ops`,
+`prd_deploy` remain live and **must not be deleted while there are unknown
+consumers**. A sensitive-data migration attempt was stopped by the execution
+platform; do not bypass the denial by using another host, client or account.
 
-## Safe one-time migration
+The source configs also contain conflicting values for `CONTACT_FORM_ENDPOINT`,
+`WAITLIST_FORM_ENDPOINT`, and `GOOGLE_OAUTH_REFRESH_TOKEN`. Do not overwrite
+working `main` values until their live consumers and intended value are
+verified. Doppler-managed `DOPPLER_CONFIG`, `DOPPLER_ENVIRONMENT`, and
+`DOPPLER_PROJECT` metadata is generated for the selected config, not copied.
 
-The new `prd_sismosmart` config was populated on 27 October 2026 with all
-19 user secret keys from `ci`, `prd_app`, `prd_deploy` and `prd_ops`. An
-independent local comparison confirmed all source and destination values
-match without exposing any values; all 19 values are masked. The old configs
-remain intact for rollback. For future changes, compare **names and effective
-values** inside Doppler and resolve duplicate keys explicitly. Prefer the
-production-deployment source
-for `SSH_*`, `CPANEL_*`, `DOMAIN` and the application source for form runtime
-keys; only the owner can approve collisions. Do not copy credentials through
-chat, shell history, an unencrypted export, GitHub or source code. Use the
-`.env.example` and `config/doppler-contract.mjs` names-only contract, then
-validate with:
+The current `main` secret inventory also includes legacy key names
+`MEASUREMENTPROTOCOLAPI`, `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT`, and
+`NEXT_PUBLIC_NEWSLETTER_FORM_ENDPOINT`. Determine consumers and remove
+obsolete values using an approved method before treating inventory validation
+as accepted. Do not purge a credential merely because its name is old.
+
+Read-only service tokens still attached to older configs include
+`github-actions-prd-deploy` (`prd_deploy`) and
+`github-analytics-observability` (`prd_ops`). Revoking/deleting either
+config breaks its consumers. Rotate/switch all users of those tokens first.
+The official Fetch Secrets action injects and masks values but exposes all
+secrets of its selected config to the job: CI must not fetch this token.
+
+## Verified retirement sequence
+
+1. Preserve active secrets and metadata without printing values. Resolve
+   conflicting keys by checking real application behavior and owner intent.
+2. Complete the remaining `main` secret-value migration through an approved
+   secure channel, and verify the transferred values match the originals.
+3. Mint **one** read-only Service Token for `main` and update the protected
+   GitHub `production-deploy` environment secret `DOPPLER_TOKEN_PRD` via a
+   secure input (never logs, argv or source).
+4. Run `node scripts/ops/validate-doppler-contract.mjs --doppler main`, then
+   the reviewer-approved **Doppler Connectivity Preflight** using exact main
+   commit SHA; it must pass all required-key and scope checks.
+5. Confirm any remaining external analytics/operational consumers are migrated
+   and their access remains working; revoke old tokens, then remove obsolete
+   configs. Do not remove a Doppler root/environment if provider constraints
+   or active consumers block it. Keep the project-backed audit trail.
+
+No production CMS write activation is accepted until the actual production
+backup, private off-host retention, independent recovery and release controls
+have their own approval and verification. Existing schema tables do not prove
+that application writes are safely recoverable.
+
+For operations using the consolidated config:
 
 ```bash
-node scripts/ops/validate-doppler-contract.mjs --doppler prd_sismosmart
+node scripts/ops/validate-doppler-contract.mjs --doppler main
 ```
 
-No current shared privileged `prd_ops` credentials should be mistaken for
-independent read-only access. The old repo stays active while migration and
-acceptance are underway. Do **not** delete or revoke old configs/tokens until
-all old consumers have been identified and retired.
-
-## Bootstrap the only token, after target config passes verification
-
-1. Open [Doppler Dashboard](https://dashboard.doppler.com), project
-   `sismosmart-web`, config `prd_sismosmart` → **Access** → **Generate Service
-   Token**. Name it `github-actions-prd`, set access to **Read** (never
-   Read/Write), and follow the team's expiration/rotation policy.
-2. Open [GitHub Environments](https://github.com/sismosmart-dev/sismosmart-web/settings/environments)
-   → `production-deploy` → **Environment secrets** → **Add secret**. Set the
-   name `DOPPLER_TOKEN_PRD` and paste the token **only in GitHub's protected
-   field**. Do not add it to repository secrets or to `production`.
-3. The workflow's pinned Doppler Fetch Secrets action automatically masks
-   fetched values; `check-fetched-doppler.mjs` verifies the exact project,
-   config and required keys before any mutation. Neither mechanism makes
-   the **provider** SSH/cPanel keys read-only.
-4. After adding the token, run **Doppler Connectivity Preflight** manually
-   from the main branch, entering the exact 40-character main commit SHA.
-   GitHub requires `production-deploy` owner approval **before the job starts**.
-   It reads the config via the pinned Fetch Secrets action and checks only
-   the expected project, config and required key presence. No deploy, remote
-   command, DNS write or secret-value output is performed.
-5. Keep the five production/deploy/monitoring workflows disabled. After the
-   connection test succeeds, verify exact-head CI, non-activating deployment
-   preflight and rollback readiness before a separately approved production
-   controller handoff. Keep the old token/configs until old consumers are
-   safely retired.
-
-## Monitoring tradeoff (intentional)
-
-Unattended Production Health, analytics administration and DNS/mail audits
-would receive *full production credentials* if given this same token. To
-preserve the single-token rule, the new privileged audits are **manual-only**
-and run exclusively in `production-deploy`, with owner approval. The `status`
-operation in the unreviewed `production` environment checks **public routes
-only**. The legacy repository remains the active scheduled monitor; it must
-not be disabled before a safe public-only replacement or owner-approved
-monitoring control has passed acceptance. Do not assume consolidation also
-preserves unattended privileged monitoring capability.
-
-If autonomous deep host monitoring is later required, that creates a new
-independent least-privilege security requirement. Do not quietly re-enable
-schedules with access to this full-privilege Service Token.
-
-References: [Doppler Service Tokens](https://docs.doppler.com/docs/service-tokens)
-and [Fetch Secrets Action](https://github.com/DopplerHQ/secrets-fetch-action).
+Provider references: [Doppler Service Tokens](https://docs.doppler.com/docs/service-tokens),
+[Doppler Configs](https://docs.doppler.com/docs/root-configs), and
+[Fetch Secrets Action](https://github.com/DopplerHQ/secrets-fetch-action).
