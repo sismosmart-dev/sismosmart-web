@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { VALIDATION_PHASES } from "../scripts/deploy/preflight-policy.mjs";
+
 import {
   InjectedDeploymentFailure,
   runDeploymentTransaction,
@@ -66,12 +68,12 @@ test("validation-only phases never activate or commit production", async () => {
   const { calls, operations } = createOperations();
   const state = await runDeploymentTransaction(operations, {
     logger: silentLogger,
-    phases: ["prepare", "snapshot", "preflight"],
+    phases: VALIDATION_PHASES,
   });
 
   assert.equal(state.activated, false);
   assert.equal(state.committed, false);
-  assert.deepEqual(calls, ["prepare", "snapshot", "preflight", "cleanup"]);
+  assert.deepEqual(calls, ["snapshot", "prepare", "preflight", "cleanup"]);
 });
 
 test("failure before activation leaves production untouched", async () => {
