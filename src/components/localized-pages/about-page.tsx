@@ -1,3 +1,4 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import { PageHero } from "@/components/page-hero";
 import { SectionHeading } from "@/components/section-heading";
 import { getPages } from "@/lib/pages";
@@ -103,9 +104,9 @@ const aboutLabels: Record<
   },
 };
 
-export function AboutPage({ locale }: { locale: Locale }) {
+export function AboutPage({ locale, pages }: { locale: Locale; pages?: RoutePagesCopy }) {
   const labels = aboutLabels[locale];
-  const page = getPages(locale).about;
+  const page = pages?.about ?? getPages(locale).about;
 
   return (
     <main className="flex flex-1 flex-col gap-8 pb-16 pt-8 sm:gap-10 sm:pt-10" id="content">

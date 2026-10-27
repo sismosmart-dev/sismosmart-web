@@ -1,3 +1,4 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import Image from "next/image";
 
 import { PageHero } from "@/components/page-hero";
@@ -116,9 +117,9 @@ const howItWorksLabels: Record<
   },
 };
 
-export function HowItWorksPage({ locale }: { locale: Locale }) {
+export function HowItWorksPage({ locale, pages }: { locale: Locale; pages?: RoutePagesCopy }) {
   const labels = howItWorksLabels[locale];
-  const page = getPages(locale).howItWorks;
+  const page = pages?.howItWorks ?? getPages(locale).howItWorks;
 
   return (
     <main className="flex flex-1 flex-col gap-8 pb-16 pt-8 sm:gap-10 sm:pt-10" id="content">

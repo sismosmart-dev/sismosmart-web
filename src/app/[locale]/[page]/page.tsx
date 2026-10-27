@@ -4,14 +4,17 @@ import { notFound } from "next/navigation";
 import { renderStaticPage } from "@/components/localized-subpage";
 import { StructuredData } from "@/components/structured-data";
 import {
-  getPages,
   resolveStaticPageKey,
   routeSegments,
   staticPageKeys,
 } from "@/lib/pages";
+import { getCmsSubpageCopy } from "@/lib/content-api/subpages";
 import { getPageStructuredData } from "@/lib/structured-data";
 import { buildPageMetadata } from "@/lib/metadata";
 import { isLocale, locales, type Locale } from "@/lib/site";
+
+// CMS-enabled pages read only a small, validated intro override per request.
+export const dynamic = "force-dynamic";
 
 type LocalizedStaticPageProps = {
   params: Promise<{ locale: string; page: string }>;
@@ -41,7 +44,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const metadata = getPages(locale)[pageKey].meta;
+  const metadata = (await getCmsSubpageCopy(locale, pageKey))[pageKey].meta;
   return buildPageMetadata(
     locale,
     routeSegments[pageKey],
@@ -65,13 +68,15 @@ export default async function LocalizedStaticPage({
     notFound();
   }
 
+  const pages = await getCmsSubpageCopy(locale, pageKey);
+
   return (
     <>
       <StructuredData
-        data={getPageStructuredData(locale as Locale, pageKey)}
+        data={getPageStructuredData(locale as Locale, pageKey, pages)}
         id={`${locale}-${pageKey}-structured-data`}
       />
-      {renderStaticPage(locale as Locale, pageKey)}
+      {renderStaticPage(locale as Locale, pageKey, pages)}
     </>
   );
 }

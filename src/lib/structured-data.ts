@@ -1,3 +1,4 @@
+import type { RoutePagesCopy } from "@/lib/page-copy";
 import { getPages, routeSegments, type StaticPageKey } from "@/lib/pages";
 import { getCopy, siteConfig, type Locale, type SiteCopy } from "@/lib/site";
 
@@ -122,8 +123,7 @@ export function getHomeStructuredData(locale: Locale, copy: SiteCopy = getCopy(l
   ];
 }
 
-export function getPageStructuredData(locale: Locale, pageKey: StaticPageKey) {
-  const pages = getPages(locale);
+export function getPageStructuredData(locale: Locale, pageKey: StaticPageKey, pages: RoutePagesCopy = getPages(locale)) {
 
   switch (pageKey) {
     case "product":
