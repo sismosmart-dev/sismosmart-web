@@ -1143,7 +1143,7 @@ test("detail route GET returns correct headers for all 12 guides", async () => {
       });
       assert.equal(response.status, 200, `Detail route must return 200 for ${locale}/${guide.slug}`);
       assert.equal(response.headers.get("content-type"), "text/markdown; charset=utf-8", `content-type must be text/markdown for ${locale}/${guide.slug}`);
-      assert.equal(response.headers.get("cache-control"), "public, max-age=3600", `cache-control must be correct for ${locale}/${guide.slug}`);
+      assert.equal(response.headers.get("cache-control"), "public, max-age=0, must-revalidate", `cache-control must be correct for ${locale}/${guide.slug}`);
       assert.equal(response.headers.get("vary"), "Accept", `Vary must be Accept for ${locale}/${guide.slug}`);
       const canonicalPath = getGuideCanonicalPath(guide);
       assert.equal(response.headers.get("link"), `<${siteUrl}${canonicalPath}>; rel="canonical"`, `Link must point to canonical for ${locale}/${guide.slug}`);

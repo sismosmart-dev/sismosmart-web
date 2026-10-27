@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { StructuredData } from "@/components/structured-data";
-import { getGuideBySlug } from "@/lib/guides/catalog";
+import { getCmsGuide } from "@/lib/content-api/guides";
 import { buildGuideMetadata } from "@/lib/guides/metadata";
 import { getDetailStaticParams, resolveDetailParams } from "@/lib/guides/routing";
 import { getGuideStructuredData } from "@/lib/guides/structured-data";
 import { GuideDetailPage } from "@/components/guides/guide-detail-page";
+
+// Published guide updates render without another source release.
+export const dynamic = "force-dynamic";
 
 type GuideDetailProps = {
   params: Promise<{ locale: string; slug: string }>;
@@ -20,7 +23,7 @@ export async function generateMetadata({ params }: GuideDetailProps): Promise<Me
   const { locale, slug } = await params;
   const resolved = resolveDetailParams(locale, slug);
   if (!resolved) return {};
-  const guide = getGuideBySlug(resolved.locale, resolved.slug);
+  const guide = await getCmsGuide(resolved.locale, resolved.slug);
   if (!guide) return {};
   return buildGuideMetadata(guide);
 }
@@ -30,7 +33,7 @@ export default async function GuideDetailRoute({ params }: GuideDetailProps) {
   const resolved = resolveDetailParams(locale, slug);
   if (!resolved) notFound();
 
-  const guide = getGuideBySlug(resolved.locale, resolved.slug);
+  const guide = await getCmsGuide(resolved.locale, resolved.slug);
   if (!guide) notFound();
 
   return (

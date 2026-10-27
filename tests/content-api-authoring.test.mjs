@@ -141,7 +141,7 @@ test("protected content write APIs are disabled by default and dynamic homepage 
   assert.match(admin, /CMS_DB_ENABLED !== "true" \|\| process.env.CMS_WRITE_ENABLED !== "true"/);
   assert.match(admin, /authorizeContentAdmin/);
   assert.match(admin, /sameOrigin/);
-  assert.match(admin, /readLimitedJsonBody\(request, 8_192\)/);
+  assert.match(admin, /readLimitedJsonBody\(request, maxBytes\)/);
   assert.match(home, /dynamic = "force-dynamic"/);
   assert.match(home, /getHomeCopy\(activeLocale\)/);
   assert.match(home, /getHomeStructuredData\(activeLocale, copy\)/);
