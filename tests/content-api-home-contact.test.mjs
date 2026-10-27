@@ -14,8 +14,10 @@ const homeFields = ["hero", "trust", "howItWorks", "features", "demo", "proof", 
 function homeBody(source) {
   const { title, description, primaryHref, secondaryHref, tertiaryHref, ...hero } = source.hero;
   void title; void description; void primaryHref; void secondaryHref; void tertiaryHref;
+  const { ctaHref, ...demo } = source.demo;
+  void ctaHref;
   return { hero, trust: source.trust, howItWorks: source.howItWorks, features: source.features,
-    demo: (({ ctaHref, ...rest }) => rest)(source.demo), proof: source.proof,
+    demo, proof: source.proof,
     faq: source.faq, newsletter: source.newsletter };
 }
 

@@ -1,3 +1,4 @@
+import { validateCmsRuntimeConfiguration } from "../scripts/deploy/cms-runtime-contract.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -200,4 +201,49 @@ test("runtime environment writer uses a strict allowlist and mode 0600", () => {
     "WAITLIST_FORM_ENDPOINT",
   ]);
   assert.doesNotMatch(result.content, /EXTRA_SECRET|must-not-be-written/);
+});
+
+test("CMS runtime remains off by default and accepts staged disabled credentials", () => {
+  assert.doesNotThrow(() => validateCmsRuntimeConfiguration({}));
+  assert.doesNotThrow(() => validateCmsRuntimeConfiguration({
+    CMS_DB_ENABLED: "false", CMS_WRITE_ENABLED: "false", CMS_DB_HOST: "localhost",
+  }));
+});
+
+test("CMS read-only and write modes require complete safe local SQL configuration", () => {
+  const base = {
+    CONTACT_FORM_ENDPOINT: "https://forms.example/contact",
+    WAITLIST_FORM_ENDPOINT: "https://forms.example/waitlist",
+    CMS_DB_ENABLED: "true",
+    CMS_WRITE_ENABLED: "false",
+    CMS_DB_HOST: "localhost",
+    CMS_DB_USER: "cms_scoped",
+    CMS_DB_PASSWORD: "test-only-password",
+    CMS_DB_NAME: "cms_test",
+  };
+  assert.doesNotThrow(() => validateCmsRuntimeConfiguration(base));
+  assert.ok(buildRuntimeEnv(base).keys.includes("CMS_DB_ENABLED"));
+
+  for (const key of ["CMS_DB_HOST", "CMS_DB_USER", "CMS_DB_PASSWORD", "CMS_DB_NAME"]) {
+    assert.throws(() => validateCmsRuntimeConfiguration({ ...base, [key]: "" }), /CMS_RUNTIME_MISSING_KEYS/);
+  }
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_DB_HOST: "db.example.test" }), /CMS_RUNTIME_DATABASE_MUST_BE_LOCAL/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_DB_PORT: "3306;test" }), /CMS_RUNTIME_INVALID_DB_PORT/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_DB_PORT: "65536" }), /CMS_RUNTIME_INVALID_DB_PORT/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_DB_ENABLED: "TRUE" }), /CMS_RUNTIME_INVALID_FLAG/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_WRITE_ENABLED: "enabled" }), /CMS_RUNTIME_INVALID_FLAG/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_DB_ENABLED: "false", CMS_WRITE_ENABLED: "true" }), /CMS_RUNTIME_WRITE_REQUIRES_DB/);
+
+  assert.throws(() => buildRuntimeEnv({ ...base, CMS_DB_PASSWORD: "" }), /CMS_RUNTIME_MISSING_KEYS/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_WRITE_ENABLED: "true" }), /CMS_RUNTIME_INVALID_ADMIN_TOKEN/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_WRITE_ENABLED: "true", CMS_ADMIN_TOKEN: "short" }), /CMS_RUNTIME_INVALID_ADMIN_TOKEN/);
+  assert.throws(() => validateCmsRuntimeConfiguration({ ...base, CMS_WRITE_ENABLED: "true", CMS_ADMIN_TOKEN: "x".repeat(32) + " " }), /CMS_RUNTIME_INVALID_ADMIN_TOKEN/);
+  assert.doesNotThrow(() => validateCmsRuntimeConfiguration({ ...base, CMS_WRITE_ENABLED: "true", CMS_ADMIN_TOKEN: "x".repeat(48) }));
+});
+
+test("both runtime deployment paths enforce the CMS preflight before writing credentials", () => {
+  const prepare = readFileSync("scripts/deploy/prepare-standalone.mjs", "utf8");
+  const runtime = readFileSync("scripts/deploy/runtime-env.mjs", "utf8");
+  assert.match(prepare, /WRITE_RUNTIME_ENV_FILE === "true"\) validateCmsRuntimeConfiguration\(process.env\)/);
+  assert.match(runtime, /buildRuntimeEnv\(environment = process.env\) \{\s+validateCmsRuntimeConfiguration\(environment\)/);
 });
