@@ -1,6 +1,6 @@
 # Content API: database and release prerequisites
 
-The SismoSmart website currently has six locale-specific TypeScript content sources. Issue #29 tracks progressive, opt-in API-managed edits with no rebuild needed for subsequent publications. **This foundation PR does not enable publishing or change current public rendering.**
+The SismoSmart website currently has six locale-specific TypeScript content sources. Issue #29 tracks progressive, opt-in API-managed edits with no rebuild needed for subsequent publications. **Authoring API code is merged but still disabled in production; no live SQL tables, grants, publishing credentials or live content have been enabled.**
 
 ## Confirmed hosting facts (2026-10-27)
 
@@ -60,7 +60,10 @@ the existing TypeScript copy as safe fallback. The homepage HTML, page metadata
 and homepage JSON-LD use the same resolved, validated copy. Other pages remain
 static until migrated in #29. Dynamic route cost is limited to six homepages,
 with up to two read queries per request and at most two local DB connections per
-Node/Passenger worker; do not enable unbounded connection pools.
+Node/Passenger worker. Initial DB connection timeout is 1.5 seconds. An optional
+CMS outage triggers a 15-second per-worker backoff to serve the existing
+source-controlled copy rather than repeatedly connecting to a failed database.
+Do not enable unbounded connection pools.
 
 **A DB failure must never disclose drafts or break public content.** Database
 changes are transactionally recorded in `cms_revision`. Every successful
@@ -75,3 +78,21 @@ content writes until a portable SQL dump is stored outside the web root,
 restored into an isolated test database, and a sustainable recurring backup
 with retention has been proven. An empty schema or GitHub release archive is
 not a substitute for a database backup.
+
+## Production backup readiness (verified 2026-10-27)
+
+The authenticated cPanel database manager shows `sismosma_web` with zero tables,
+and the existing `sismosma_user` is **not** assigned to that database. The
+provider's automatic backup feature is unavailable and the account has no
+cron jobs. Verified executable utilities on the remote cPanel host:
+`mariadb-dump`, `mysqldump`, `mariadb`, `mysql`, `gzip`, `sha256sum`, `flock`,
+and `crontab`. No external backup service is required, but an off-host
+retention target and a tested import into an isolated database are mandatory.
+
+A manual SQL export was initiated through cPanel's official Backup interface,
+but the Chrome download remained incomplete. A subsequent authenticated API
+backup retrieval was blocked by platform safety controls; do **not** bypass
+that denial with another account, command, or tool. Accordingly no verified
+SQL backup exists yet and **no production schema, database grants, or runtime
+activation must be attempted**. This is an explicit release hold, not a claim
+that GitHub Actions artifacts or a code rollback protect database contents.
