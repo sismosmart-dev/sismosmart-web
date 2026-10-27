@@ -105,3 +105,26 @@ Include UTC timestamps, workflow run IDs, route labels, cold/warm timing, quota 
 ## Alert channel
 
 The scheduled workflow result is the alert. GitHub notifications should be enabled for failed Actions runs. The workflow does not automatically create or reopen issues, because repeated transient provider failures should be reviewed before generating repository noise. Two consecutive completed failures are blocking and must be triaged under the fault domain reported by the latest audit.
+
+## New repository public-only scheduled monitor (staged, not yet activated)
+
+The separate `Public Health` workflow performs cold and warm verified HTTPS GET
+requests to eight public routes, including read-only form runtime endpoints. It
+never uses Doppler, SSH, cPanel or any GitHub secret. A failed route or missing
+route result fails the Action visibly. It is main-only and uses the tokenless
+`production` environment. GitHub Actions defaults to notifying subscribed
+maintainers of workflow failures; do not assume it replaces off-platform paging.
+
+The scheduled job is **disabled by default** through the absent/false
+`SISMOSMART_PUBLIC_MONITOR_ENABLED` repository variable. A manual
+`workflow_dispatch` is available for acceptance after merge. Enable the
+variable only when the old repository public monitoring has a safe replacement
+and the new controller handoff is approved. Avoid duplicate scheduled audits.
+
+This monitor cannot inspect origin, Passenger, cPanel quota, private release
+consistency or privileged DNS/API resources. The deep `Production Health` audit
+remains a **manual owner-approved** operation in `production-deploy`, because
+the single Doppler config has deployment-capable credentials. Do not claim
+that public-only checks are a privilege-equivalent replacement for historical
+private audits. The old scheduled health workflow must remain active until the
+monitoring scope and reduced automated coverage are explicitly accepted.
