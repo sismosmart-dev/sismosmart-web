@@ -19,6 +19,8 @@ The SismoSmart website currently has six locale-specific TypeScript content sour
 5. Publish only validated, approved records. First prove `en/home.hero` draft, publish, SEO consistency and rollback under a separate protected migration/release; then expand to other pages/locales.
 6. Keep source-controlled TypeScript copy as a failure fallback. Publication must invalidate the corresponding Next.js rendering and metadata caches and must not require a new GitHub deployment.
 
+**Runtime configuration preflight:** Both the protected runtime environment writer and the standalone deployment-package generator reject an enabled CMS unless all local SQL connection fields are present and the opt-in flags are valid. CMS writes additionally require a 32–256-character base64url admin token. With flags unset or false, existing production deployment remains unchanged. Passing this preflight is **not** backup/restore, grant, or publication acceptance; do not enable the CMS until the independent live release gates above succeed.
+
 ## Operational boundaries
 
 Only documented keys in `src/lib/content-api/contracts.ts` are editable. No raw HTML is accepted; the runtime must not return drafts to public visitors. Limit admin writes to authenticated, audited operations. Version/optimistic-lock checks, read-only public fallback, and rollback testing are required before enabling writes.

@@ -7,6 +7,7 @@ import {
   toRemoteAbsolutePath,
 } from "./config.mjs";
 import { posixJoin, runRemoteCommand, withSftp } from "./helpers.mjs";
+import { validateCmsRuntimeConfiguration } from "./cms-runtime-contract.mjs";
 
 export const RUNTIME_ENV_MODE = "0600";
 
@@ -41,6 +42,7 @@ function serializeEnvValue(value) {
 }
 
 export function buildRuntimeEnv(environment = process.env) {
+  validateCmsRuntimeConfiguration(environment);
   const values = Object.fromEntries(
     runtimeEnvKeys
       .filter((key) => environment[key])

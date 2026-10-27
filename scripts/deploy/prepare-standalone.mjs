@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { getConfig, logStep } from "./config.mjs";
 import { copyDirectory, resetDirectory } from "./helpers.mjs";
+import { validateCmsRuntimeConfiguration } from "./cms-runtime-contract.mjs";
 
 async function pathExists(targetPath) {
   try {
@@ -106,6 +107,7 @@ async function writeRuntimeEnvFile(rootPath) {
 
 async function main() {
   const config = getConfig();
+  if (process.env.WRITE_RUNTIME_ENV_FILE === "true") validateCmsRuntimeConfiguration(process.env);
   const deployRoot = path.resolve(config.localDeployRoot);
   const staticRoot = path.join(deployRoot, ".next", "static");
   const publicRoot = path.join(deployRoot, "public");
