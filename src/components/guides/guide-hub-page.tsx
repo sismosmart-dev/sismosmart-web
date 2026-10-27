@@ -1,18 +1,20 @@
 import { getLocalizedHref } from "@/lib/site";
-import { getGuideCanonicalPath, getGuidesByCategory } from "@/lib/guides/catalog";
-import type { GuideHubCopy, GuideLocale } from "@/lib/guides/types";
+import { commercialTranslationKeys, getGuideCanonicalPath, getGuidesByCategory, technicalTranslationKeys } from "@/lib/guides/catalog";
+import type { GuideContent, GuideHubCopy, GuideLocale } from "@/lib/guides/types";
 import { getGuideUiStrings } from "@/lib/guides/ui-strings";
 
 type GuideHubPageProps = {
   locale: GuideLocale;
   hub: GuideHubCopy;
+  guides?: readonly GuideContent[];
 };
 
 
 
-export function GuideHubPage({ locale, hub }: GuideHubPageProps) {
-  const commercialGuides = getGuidesByCategory(locale, "commercial");
-  const technicalGuides = getGuidesByCategory(locale, "technical");
+export function GuideHubPage({ locale, hub, guides }: GuideHubPageProps) {
+  const all = guides ?? [...getGuidesByCategory(locale, "commercial"), ...getGuidesByCategory(locale, "technical")];
+  const commercialGuides = commercialTranslationKeys.map((key) => all.find((guide) => guide.translationKey === key)).filter((x): x is GuideContent => !!x);
+  const technicalGuides = technicalTranslationKeys.map((key) => all.find((guide) => guide.translationKey === key)).filter((x): x is GuideContent => !!x);
   const ui = getGuideUiStrings(locale);
 
   return (

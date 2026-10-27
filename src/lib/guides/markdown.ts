@@ -1,5 +1,7 @@
-import type { GuideContent, GuideLocale, GuideTranslationKey } from "@/lib/guides/types";
+import type { GuideContent, GuideHubCopy, GuideLocale, GuideTranslationKey } from "@/lib/guides/types";
 import {
+  commercialTranslationKeys,
+  technicalTranslationKeys,
   getGuideByTranslationKey,
   getGuideCanonicalPath,
   getGuideHub,
@@ -43,11 +45,18 @@ function renderRelatedGuideLinks(
     .join("\n");
 }
 
-export function renderGuideHubMarkdown(locale: GuideLocale): string {
-  const hub = getGuideHub(locale);
+export function renderGuideHubMarkdown(
+  locale: GuideLocale,
+  resolved?: { hub?: GuideHubCopy; guides?: readonly GuideContent[] },
+): string {
+  const hub = resolved?.hub ?? getGuideHub(locale);
   const ui = getGuideUiStrings(locale);
-  const commercialGuides = getGuidesByCategory(locale, "commercial");
-  const technicalGuides = getGuidesByCategory(locale, "technical");
+  const commercialGuides = resolved?.guides
+    ? commercialTranslationKeys.map((key) => resolved.guides?.find((g) => g.translationKey === key)).filter((g): g is GuideContent => Boolean(g))
+    : getGuidesByCategory(locale, "commercial");
+  const technicalGuides = resolved?.guides
+    ? technicalTranslationKeys.map((key) => resolved.guides?.find((g) => g.translationKey === key)).filter((g): g is GuideContent => Boolean(g))
+    : getGuidesByCategory(locale, "technical");
   const canonicalUrl = `${siteConfig.url}/${locale}/guides`;
   const publishedAt = hubPublishedAt(locale);
   const lastUpdated = hubLastUpdated(locale);

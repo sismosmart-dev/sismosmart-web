@@ -1,5 +1,5 @@
 import { siteConfig } from "@/lib/site";
-import type { GuideContent, GuideLocale } from "@/lib/guides/types";
+import type { GuideContent, GuideHubCopy, GuideLocale } from "@/lib/guides/types";
 import { getGuideHub, getGuideCanonicalPath } from "@/lib/guides/catalog";
 import { getGuideUiStrings } from "@/lib/guides/ui-strings";
 
@@ -54,8 +54,7 @@ function guideBreadcrumb(guide: GuideContent): object {
   };
 }
 
-function hubCollectionPage(locale: GuideLocale): object {
-  const hub = getGuideHub(locale);
+function hubCollectionPage(locale: GuideLocale, hub: GuideHubCopy = getGuideHub(locale)): object {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -88,8 +87,8 @@ function hubBreadcrumb(locale: GuideLocale): object {
   };
 }
 
-export function getGuideHubStructuredData(locale: GuideLocale): object[] {
-  return [hubCollectionPage(locale), hubBreadcrumb(locale)];
+export function getGuideHubStructuredData(locale: GuideLocale, hub: GuideHubCopy = getGuideHub(locale)): object[] {
+  return [hubCollectionPage(locale, hub), hubBreadcrumb(locale)];
 }
 
 export function getGuideStructuredData(guide: GuideContent): object[] {

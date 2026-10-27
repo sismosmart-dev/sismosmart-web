@@ -15,6 +15,74 @@ const homeMeta = z.strictObject({
   description: z.string().trim().min(1).max(320),
 });
 
+const homePlainStat = z.strictObject({ label: z.string().trim().min(1).max(160), value: z.string().trim().min(1).max(240) });
+const homePlainCard = z.strictObject({ title: z.string().trim().min(1).max(240), description: z.string().trim().min(1).max(2_000) });
+const homeLabel = z.string().trim().min(1).max(240);
+const homeDescription = z.string().trim().min(1).max(2_000);
+const homeHeading = z.strictObject({ eyebrow: homeLabel, title: homeLabel, description: homeDescription });
+const homeSections = z.strictObject({
+  hero: z.strictObject({
+    badge: homeLabel,
+    primaryCta: homeLabel,
+    secondaryCta: homeLabel,
+    tertiaryCta: homeLabel.optional(),
+    stats: z.array(homePlainStat).min(1).max(12),
+    deviceEyebrow: homeLabel,
+    deviceTitle: homeLabel,
+    deviceDescription: homeDescription,
+    deviceSpecs: z.array(homeLabel).min(1).max(20),
+    meterTopLabel: homeLabel,
+    meterTopValue: homeLabel,
+    meterBottomLabel: homeLabel,
+    meterBottomValue: homeLabel,
+    imageAlt: homeLabel,
+  }),
+  trust: homeHeading.extend({ items: z.array(homePlainStat).min(1).max(12) }),
+  howItWorks: homeHeading.extend({ steps: z.array(homePlainCard).min(1).max(16) }),
+  features: homeHeading.extend({ items: z.array(homePlainCard.extend({ accent: homeLabel })).min(1).max(20) }),
+  demo: homeHeading.extend({
+    previewLabel: homeLabel, networkLabel: homeLabel,
+    sensorLabel: homeLabel, sensorValue: homeLabel,
+    eventLabel: homeLabel, eventValue: homeLabel,
+    bullets: z.array(homeDescription).min(1).max(20),
+    cta: homeLabel,
+  }),
+  proof: homeHeading.extend({ cards: z.array(z.strictObject({
+    title: homeLabel, description: homeDescription, highlight: homeLabel,
+  })).min(1).max(20) }),
+  faq: homeHeading.extend({ items: z.array(homePlainCard).min(1).max(30) }),
+  newsletter: homeHeading.extend({
+    inputLabel: homeLabel, placeholder: homeLabel, button: homeLabel,
+    consent: homeDescription, note: homeDescription,
+    loading: homeLabel, success: homeDescription, error: homeDescription,
+    missingEndpoint: homeDescription, rateLimited: homeDescription,
+  }),
+});
+const guideHubCopy = z.strictObject({
+  title: homeLabel,
+  description: homeDescription,
+  eyebrow: homeLabel,
+  h1: homeLabel,
+  intro: homeDescription,
+  commercialHeading: homeLabel,
+  technicalHeading: homeLabel,
+  relatedResourcesHeading: homeLabel,
+});
+
+const contactCopy = z.strictObject({
+  channels: z.array(z.strictObject({
+    title: homeLabel, description: homeDescription, value: homeLabel,
+  })).min(1).max(12),
+  form: z.strictObject({
+    nameLabel: homeLabel, emailLabel: homeLabel,
+    subjectLabel: homeLabel, messageLabel: homeLabel,
+    buttonLabel: homeLabel, consentLabel: homeDescription,
+    note: homeDescription, loadingLabel: homeLabel,
+    successMessage: homeDescription, errorMessage: homeDescription,
+    missingEndpointMessage: homeDescription, rateLimitedMessage: homeDescription,
+  }),
+});
+
 // Bounded plain-text pairs for FAQ, policy, glossary and other editorial cards.
 const pageSections = z.strictObject({
   sections: z.array(z.strictObject({
@@ -98,18 +166,27 @@ const pageIntro = z.strictObject({
 
 type HomeHero = z.infer<typeof homeHero>;
 type HomeMeta = z.infer<typeof homeMeta>;
+type HomeSections = z.infer<typeof homeSections>;
+type ContactCopy = z.infer<typeof contactCopy>;
+type GuideHubCopyDocument = z.infer<typeof guideHubCopy>;
 type PageIntro = z.infer<typeof pageIntro>;
 type PageSections = z.infer<typeof pageSections>;
 type GuideBody = z.infer<typeof guideBody>;
 export type GuideBodyKey = `guide.${GuideTranslationKey}.body`;
 export type PageIntroKey = `page.${StaticPageKey}.intro`;
 export type PageSectionsKey = `page.${SectionPageKey}.sections`;
-export type ContentKey = "home.hero" | "home.meta" | PageIntroKey | PageSectionsKey | PageDetailsKey | GuideBodyKey;
+export type ContentKey = "home.hero" | "home.meta" | "home.sections" | "page.contact.copy" | "guides.hub" | PageIntroKey | PageSectionsKey | PageDetailsKey | GuideBodyKey;
 export type ContentDocument<K extends ContentKey> = K extends "home.hero"
   ? HomeHero
   : K extends "home.meta"
     ? HomeMeta
-    : K extends PageIntroKey
+    : K extends "home.sections"
+      ? HomeSections
+      : K extends "page.contact.copy"
+        ? ContactCopy
+        : K extends "guides.hub"
+          ? GuideHubCopyDocument
+          : K extends PageIntroKey
       ? PageIntro
       : K extends PageSectionsKey
         ? PageSections
@@ -139,7 +216,7 @@ export function isContentLocale(value: unknown): value is Locale {
 }
 
 export function isContentKey(value: unknown): value is ContentKey {
-  return value === "home.hero" || value === "home.meta" ||
+  return value === "home.hero" || value === "home.meta" || value === "home.sections" || value === "page.contact.copy" || value === "guides.hub" ||
     (typeof value === "string" && (pageIntroKeys.has(value) || pageSectionsKeys.has(value) || pageDetailsKeys.has(value) || guideBodyKeys.has(value)));
 }
 
@@ -157,6 +234,7 @@ function rejectMarkup(input: unknown): void {
 export function validateContentDocument<K extends ContentKey>(key: K, input: unknown): ContentDocument<K> {
   if (!isContentKey(key)) throw new Error("CMS_INVALID_CONTENT_KEY");
   const schema = key === "home.hero" ? homeHero : key === "home.meta" ? homeMeta :
+    key === "home.sections" ? homeSections : key === "page.contact.copy" ? contactCopy : key === "guides.hub" ? guideHubCopy :
     pageSectionsKeys.has(key) ? pageSections : guideBodyKeys.has(key) ? guideBody :
       key === "page.product.details" ? productDetails :
       key === "page.howItWorks.details" ? processDetails :

@@ -41,7 +41,7 @@ export async function executeCmsAdmin(request: Request, context: RouteContext, a
   }
   // FAQ/legal cards and long-form guides exceed the original 8 KiB hero cap.
   // Keep a per-document hard limit to avoid unbounded admin request bodies.
-  const maxBytes = key.startsWith("guide.") ? 65_536 : key.endsWith(".sections") || key.endsWith(".details") ? 131_072 : 8_192;
+  const maxBytes = key.startsWith("guide.") ? 65_536 : key.endsWith(".sections") || key.endsWith(".details") || key === "home.sections" || key === "page.contact.copy" ? 131_072 : 8_192;
   const body = await readLimitedJsonBody(request, maxBytes);
   if (!body.ok) return reply(body.code, body.code === "PAYLOAD_TOO_LARGE" ? 413 : 400);
   const parsed = (action === "draft" ? draftPayload : action === "publish" ? publishPayload : rollbackPayload).safeParse(body.value);

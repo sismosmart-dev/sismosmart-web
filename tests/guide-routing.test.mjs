@@ -747,7 +747,7 @@ test("hub route StructuredData call uses exact data and id", () => {
   assert.match(source, /import.*getGuideHubStructuredData.*from\s*["']@\/lib\/guides\/structured-data["']/, "Hub route must import getGuideHubStructuredData");
   const sdCallMatch = source.match(/<StructuredData[\s\S]*?\/>/);
   assert.ok(sdCallMatch, "Hub route must render a <StructuredData /> call");
-  assert.match(sdCallMatch[0], /data=\{getGuideHubStructuredData\(resolved\)\}/, "Hub StructuredData must use data={getGuideHubStructuredData(resolved)}");
+  assert.match(sdCallMatch[0], /data=\{getGuideHubStructuredData\(resolved, hub\)\}/, "Hub StructuredData must use data={getGuideHubStructuredData(resolved)}");
   assert.match(sdCallMatch[0], /id=\{`\$\{resolved\}-guides-structured-data`\}/, "Hub StructuredData id must be ${resolved}-guides-structured-data");
 });
 
@@ -1103,7 +1103,7 @@ test("hub route GET returns correct content-type, cache-control, Link, Vary for 
     });
     assert.equal(response.status, 200, `Hub route must return 200 for ${locale}`);
     assert.equal(response.headers.get("content-type"), "text/markdown; charset=utf-8", `content-type must be text/markdown for ${locale}`);
-    assert.equal(response.headers.get("cache-control"), "public, max-age=3600", `cache-control must be public, max-age=3600 for ${locale}`);
+    assert.equal(response.headers.get("cache-control"), "public, max-age=0, must-revalidate", `cache-control must be current for ${locale}`);
     assert.equal(response.headers.get("vary"), "Accept", `Vary must be Accept for ${locale}`);
     assert.equal(response.headers.get("link"), `<${siteUrl}/${locale}/guides>; rel="canonical"`, `Link must point to canonical for ${locale}`);
   }
