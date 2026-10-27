@@ -12,9 +12,13 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Badge, StatGrid } from "@/components/ui/stat";
 import { buildPageMetadata } from "@/lib/metadata";
+import { getHomeCopy } from "@/lib/content-api/home";
 import { routeSegments } from "@/lib/pages";
 import { getHomeStructuredData } from "@/lib/structured-data";
-import { getCopy, getLocalizedHref, isLocale, type Locale } from "@/lib/site";
+import { getLocalizedHref, isLocale, type Locale } from "@/lib/site";
+
+// Only six homepages are dynamic; other pages retain existing static caching.
+export const dynamic = "force-dynamic";
 
 type LocalePageProps = {
   params: Promise<{ locale: string }>;
@@ -27,7 +31,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
     return {};
   }
 
-  const copy = getCopy(locale);
+  const copy = await getHomeCopy(locale);
   return buildPageMetadata(locale, routeSegments.home, copy.meta.title, copy.meta.description);
 }
 
@@ -39,12 +43,12 @@ export default async function LocaleHomePage({ params }: LocalePageProps) {
   }
 
   const activeLocale = locale as Locale;
-  const copy = getCopy(activeLocale);
+  const copy = await getHomeCopy(activeLocale);
 
   return (
     <>
       <StructuredData
-        data={getHomeStructuredData(activeLocale)}
+        data={getHomeStructuredData(activeLocale, copy)}
         id={`${activeLocale}-home-structured-data`}
       />
       <main

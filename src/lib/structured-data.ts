@@ -1,5 +1,5 @@
 import { getPages, routeSegments, type StaticPageKey } from "@/lib/pages";
-import { getCopy, siteConfig, type Locale } from "@/lib/site";
+import { getCopy, siteConfig, type Locale, type SiteCopy } from "@/lib/site";
 
 const languageNames: Record<Locale, string> = {
   tr: "Turkish",
@@ -95,8 +95,7 @@ export function getGlobalStructuredData(locale: Locale) {
   ];
 }
 
-export function getHomeStructuredData(locale: Locale) {
-  const copy = getCopy(locale);
+export function getHomeStructuredData(locale: Locale, copy: SiteCopy = getCopy(locale)) {
 
   return [
     {

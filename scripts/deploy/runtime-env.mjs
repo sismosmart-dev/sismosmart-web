@@ -11,6 +11,14 @@ import { posixJoin, runRemoteCommand, withSftp } from "./helpers.mjs";
 export const RUNTIME_ENV_MODE = "0600";
 
 export const runtimeEnvKeys = Object.freeze([
+  "CMS_ADMIN_TOKEN",
+  "CMS_DB_ENABLED",
+  "CMS_DB_HOST",
+  "CMS_DB_NAME",
+  "CMS_DB_PASSWORD",
+  "CMS_DB_PORT",
+  "CMS_DB_USER",
+  "CMS_WRITE_ENABLED",
   "CONTACT_FORM_ENDPOINT",
   "FORM_FORWARD_AUTH_TOKEN",
   "NEXT_PUBLIC_CLARITY_ID",
