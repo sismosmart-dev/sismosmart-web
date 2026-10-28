@@ -1110,6 +1110,19 @@ test("only manually dispatched protected production jobs receive a unified Doppl
 });
 
 
+test("analytics browser audit continues after admin auth failure but not failed main token scope", () => {
+  const workflow = readText(".github/workflows/analytics-observability.yml");
+  const grant = workflow.match(/      - name: Verify scoped Doppler main grant\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+  const browser = workflow.match(/      - name: Audit consent, tag loading, and form events in every locale\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+  assert.ok(grant, "Main grant check must exist before browser audit");
+  assert.ok(browser, "Browser step must exist");
+  assert.match(grant, /id: main_scope/);
+  assert.match(grant, /check-fetched-doppler\.mjs main/);
+  assert.match(browser, /if: \$\{\{ !cancelled\(\) && steps\.main_scope\.outcome == 'success' && \(success\(\) \|\| failure\(\)\) \}\}/);
+  assert.match(browser, /ops:analytics-audit/);
+  assert.doesNotMatch(workflow, /continue-on-error: true[\s\S]*?Verify Google administrative resources/);
+});
+
 test("Doppler connectivity preflight is single-token, manually dispatched, exact-SHA and non-deploying", () => {
   const workflow = readText(".github/workflows/doppler-connectivity.yml");
   assert.match(workflow, /workflow_dispatch:/);
