@@ -88,6 +88,18 @@ jobs:
       - name: Run browser, accessibility and form checks without delivery
         run: npm run test:browser
 
+      - name: Verify public DNS, HTTPS certificate and form discovery without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/ops/public-dns-mail.mjs
+          node scripts/ops/public-health.mjs
+          # Strict TLS verification is the default; never use -k or --insecure.
+          curl --fail --silent --show-error --location \
+            --connect-timeout 10 --max-time 30 \
+            --output /dev/null https://sismosmart.com/en
+          echo "PUBLIC_NETWORK_TLS_DNS_COMPATIBILITY_PASS=true"
+
       - name: Scan dependency and source security in isolated containers
         shell: bash
         run: |
