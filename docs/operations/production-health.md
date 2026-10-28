@@ -2,7 +2,7 @@
 
 ## Purpose and safety boundary
 
-The new `Production Health` GitHub Actions workflow is a **manual-only** audit (no GitHub required-reviewer gate) while the single Doppler config contains privileged credentials. The legacy repository remains the active scheduled monitor. It does not deploy, restart Passenger, reconcile release pointers, delete releases, submit forms, alter DNS, purge caches, or change hosting configuration.
+The privileged `Production Health` GitHub Actions workflow is a **manual-only** audit (no GitHub required-reviewer gate) while unified Doppler `main` contains deployment-capable credentials. The separate tokenless `Public Health` workflow is now the active six-hour scheduled public monitor; overlapping legacy schedules have been disabled. The privileged audit does not deploy, restart Passenger, reconcile release pointers, delete releases, submit forms, alter DNS, purge caches, or change hosting configuration.
 
 The audit can fetch SSH/cPanel values from unified Doppler `main` **only** within the main-only `production-deploy` environment. Doppler Read access does not make those provider credentials read-only; the automatic schedule was removed to avoid granting it full production keys. Its JSON artifact is retained for 14 days. Artifact upload is deliberately non-blocking so an Actions storage incident cannot hide the actual audit result.
 
@@ -104,9 +104,9 @@ Include UTC timestamps, workflow run IDs, route labels, cold/warm timing, quota 
 
 ## Alert channel
 
-The scheduled workflow result is the alert. GitHub notifications should be enabled for failed Actions runs. The workflow does not automatically create or reopen issues, because repeated transient provider failures should be reviewed before generating repository noise. Two consecutive completed failures are blocking and must be triaged under the fault domain reported by the latest audit.
+The separate scheduled `Public Health` workflow result is the public alert. Privileged `Production Health` is manual-only and is not a substitute for continuous unattended monitoring. GitHub notifications should be enabled for failed Actions runs. The workflow does not automatically create or reopen issues, because repeated transient provider failures should be reviewed before generating repository noise. Two consecutive completed failures are blocking and must be triaged under the fault domain reported by the latest audit.
 
-## New repository public-only scheduled monitor (staged, not yet activated)
+## New repository public-only scheduled monitor (active; scope-limited)
 
 The separate `Public Health` workflow performs cold and warm verified HTTPS GET
 requests to eight public routes, including read-only form runtime endpoints. It
@@ -115,34 +115,39 @@ route result fails the Action visibly. It is main-only and uses the tokenless
 `production` environment. GitHub Actions defaults to notifying subscribed
 maintainers of workflow failures; do not assume it replaces off-platform paging.
 
-The scheduled job is **disabled by default** through the absent/false
-`SISMOSMART_PUBLIC_MONITOR_ENABLED` repository variable. A manual
-`workflow_dispatch` is available for acceptance after merge. Enable the
-variable only when the old repository public monitoring has a safe replacement
-and the new controller handoff is approved. Avoid duplicate scheduled audits.
+`SISMOSMART_PUBLIC_MONITOR_ENABLED=true` is configured. This controller has
+executed real GitHub `schedule` runs: first successful Run #40592772388 on
+2026-10-27; transient 3-route failure Run #40639026662 on 2026-10-28; and
+subsequent successful Run #40690921838. Manual exact-main Run #40697314435
+passed 8/8 public routes plus 5/5 public DNS/mail checks. These results
+prove actual scheduled delivery, **not** guaranteed future executions or
+equivalent inspection of the origin and hosting provider. Avoid duplicate
+public schedulers.
 
 This monitor cannot inspect origin, Passenger, cPanel quota, private release
 consistency or privileged DNS/API resources. The deep `Production Health` audit
 remains a **manual owner-approved** operation in `production-deploy`, because
 the single Doppler config has deployment-capable credentials. Do not claim
 that public-only checks are a privilege-equivalent replacement for historical
-private audits. The old scheduled health workflow must remain active until the
-monitoring scope and reduced automated coverage are explicitly accepted.
+private audits. The old overlapping health schedule has already been disabled;
+reduced unattended origin/hosting visibility remains an **open acceptance gap**.
 
 ## Monitoring controller handoff (required before old repository deletion)
 
-Old `SismoSmart/sismosmart-web` schedule coverage is wider than just website
-health: it includes 6-hour production health, daily DNS/mail/Lighthouse,
-weekly analytics and security, and daily stale-management. **Do not disable**
-those jobs merely because the new public-only checker is green.
+Historical `SismoSmart/sismosmart-web` scheduled coverage was wider than
+website health: privileged 6-hour production health, daily DNS/mail/Lighthouse,
+weekly analytics/security and stale management. Overlapping legacy workflows
+have been disabled in the old repo, which remains intact for rollback/history.
+The new public-only schedule is intentionally **not** equivalent to that
+historical private monitoring coverage.
 
 In the new repository, `Public Health` can probe eight HTTPS routes every six
 hours and `Lighthouse` can audit web experience weekly. They require **no**
 Doppler token, DNS origin address or SSH/cPanel credential; both are opt-in
 for scheduled runs using `SISMOSMART_PUBLIC_MONITOR_ENABLED=true`. The
-Lighthouse workflow must remain `disabled_manually` until final handoff,
-otherwise re-enabling it too early would create duplicate scheduled audits.
-The opt-in flag is set only once the original monitor is being retired.
+Lighthouse workflow has a weekly scheduled trigger in source, but its live
+workflow enablement and actual scheduled execution history require independent
+verification. A successful Public Health run does not prove Lighthouse parity.
 
 The protected `production-deploy` deep read-only workflows are manual only:
 Production Health, DNS Cutover Audit, Mail DNS Audit and Analytics
