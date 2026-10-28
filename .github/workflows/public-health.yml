@@ -35,3 +35,6 @@ jobs:
 
       - name: Audit public routes and form configuration via HTTPS GET only
         run: node scripts/ops/public-health.mjs
+
+      - name: Check public NS, MX, SPF, DKIM and DMARC records
+        run: node scripts/ops/public-dns-mail.mjs
