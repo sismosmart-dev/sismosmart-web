@@ -724,6 +724,10 @@ test("GitHub-hosted Ubuntu jobs pin the reviewed runner image", () => {
   assert.match(candidate, /pull_request:/);
   assert.doesNotMatch(candidate, /^  schedule:/m);
   assert.doesNotMatch(candidate, /secrets\.|production-deploy|deploy:server|deploy:validate|doppler/i);
+  assert.match(candidate, /node scripts\/ops\/public-dns-mail\.mjs/);
+  assert.match(candidate, /node scripts\/ops\/public-health\.mjs/);
+  assert.match(candidate, /PUBLIC_NETWORK_TLS_DNS_COMPATIBILITY_PASS=true/);
+  assert.doesNotMatch(candidate, /curl [^\n]*(?:--insecure|\s-k(?:\s|$))/m);
 
   const policy = readText("docs/cicd-automation.md");
   assert.match(policy, /ubuntu-24.04/i);
