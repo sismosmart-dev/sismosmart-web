@@ -714,8 +714,16 @@ test("GitHub-hosted Ubuntu jobs pin the reviewed runner image", () => {
 
   assert.ok(ubuntuJobs.length > 0, "expected GitHub-hosted Ubuntu jobs");
   for (const [name, runner] of ubuntuJobs) {
-    assert.equal(runner, "ubuntu-24.04", name + " uses an unreviewed Ubuntu image");
+    // Only the isolated opt-in compatibility workflow may use the candidate OS.
+    // All actual production and routine CI runners remain pinned to Ubuntu 24.
+    const expected = name === "ubuntu26-compat.yml" ? "ubuntu-26.04" : "ubuntu-24.04";
+    assert.equal(runner, expected, name + " uses an unreviewed Ubuntu image");
   }
+  const candidate = readText(".github/workflows/ubuntu26-compat.yml");
+  assert.match(candidate, /workflow_dispatch:/);
+  assert.match(candidate, /pull_request:/);
+  assert.doesNotMatch(candidate, /^  schedule:/m);
+  assert.doesNotMatch(candidate, /secrets\.|production-deploy|deploy:server|deploy:validate|doppler/i);
 
   const policy = readText("docs/cicd-automation.md");
   assert.match(policy, /ubuntu-24.04/i);

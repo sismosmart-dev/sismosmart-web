@@ -12,7 +12,7 @@ Pull requests must use GitHub status checks as the canonical review evidence. Wh
 
 GitHub-hosted Ubuntu jobs are pinned to `ubuntu-24.04` for reproducibility. Do not use the moving `ubuntu-latest` label in repository workflows. GitHub announced that `ubuntu-latest` begins migrating to Ubuntu 26 on 2026-10-19; Ubuntu 26 must be validated separately across CI, browser/Chrome, security, DNS/network, and deploy-validation surfaces before this repository intentionally changes its pinned image.
 
-A runner-image change does not alter production credentials, environment policy, exact-SHA deployment guards, or transactional deployment behavior. Compatibility validation for a new image must use the normal pull-request checks and read-only deployment validation before adoption.
+A runner-image change does not alter production credentials, environment policy, exact-SHA deployment guards, or transactional deployment behavior. Compatibility validation for a new image must use the normal pull-request checks and read-only deployment validation before adoption. The opt-in `.github/workflows/ubuntu26-compat.yml` candidate runs on `ubuntu-26.04` only when its own YAML is reviewed in a PR or through an explicit `workflow_dispatch`. It exercises the complete application tests, build/standalone smoke, Chrome browser checks and local source/security scans without Doppler, cPanel/SSH deployment credentials or production access. It is **compatibility evidence**, not authorization to switch existing jobs; the protected manual exact-SHA production `validate-deploy` remains a separate acceptance gate.
 
 ## Production deployment
 
