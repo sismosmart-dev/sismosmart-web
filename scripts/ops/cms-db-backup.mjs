@@ -63,7 +63,10 @@ export async function createBackup(environment = process.env, { command = "maria
   const temporary = `${base}.partial`;
   const args = [
     "--no-defaults", "--single-transaction", "--quick", "--skip-lock-tables",
-    "--no-tablespaces", "--set-charset", "--default-character-set=utf8mb4",
+    // --skip-lock-tables avoids source locks; --skip-add-locks prevents
+    // LOCK TABLES statements in the dump that otherwise require extra
+    // privileges on the isolated restore user.
+    "--no-tablespaces", "--skip-add-locks", "--set-charset", "--default-character-set=utf8mb4",
     `--host=${options.host}`, `--port=${options.port}`, `--user=${options.user}`,
     options.database,
   ];

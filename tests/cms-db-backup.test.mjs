@@ -78,5 +78,6 @@ test("backup uses no plaintext password in subprocess arguments", async () => wi
   const args = await readFile(logfile, "utf8");
   assert.match(args, /--single-transaction/);
   assert.match(args, /--skip-lock-tables/);
+  assert.match(args, /--skip-add-locks/);
   assert.doesNotMatch(args, new RegExp(secret));
 }));
