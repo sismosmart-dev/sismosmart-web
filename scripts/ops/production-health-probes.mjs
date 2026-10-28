@@ -134,6 +134,14 @@ export async function measureHttps(
                 String(response.headers.server || "").toLowerCase() ===
                   "cloudflare",
             ),
+            // Only preserve a strictly valid public CF-Ray identifier when a
+            // handshake failure occurs. Never log arbitrary response headers.
+            ...(status === 525 ? {
+              cfRay: /^[A-Fa-f0-9]{8,32}-[A-Za-z]{3}$/.test(String(response.headers["cf-ray"] ?? ""))
+                ? String(response.headers["cf-ray"])
+                : null,
+              observedAtUtc: new Date().toISOString(),
+            } : {}),
             configured,
             connectMs: rounded(connectAt ? connectAt - startedAt : null),
             errorCode: null,

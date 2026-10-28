@@ -22,6 +22,24 @@ export async function runPublicHealth({ probe = probePublicRoutes, log = console
   // addresses, response bodies, account identifiers or secret material.
   log(`PUBLIC_HEALTH ok=${summary.ok} checked=${summary.checked} failed=${summary.failed.length}`);
   for (const key of summary.failed) log(`PUBLIC_HEALTH_FAILED_ROUTE key=${key}`);
+  // When the historical Cloudflare 525 recurs, retain only safe correlation
+  // evidence (UTC time, the public CF-Ray ID and colo) in this tokenless job.
+  // Do not dump raw headers, URLs, response bodies or network endpoints.
+  for (const route of Array.isArray(result?.routes) ? result.routes : []) {
+    const key = String(route?.key ?? "");
+    if (!/^[a-z][a-z-]{0,30}$/.test(key)) continue;
+    for (const sample of ["cold", "warm"]) {
+      const measurement = route?.[sample];
+      if (measurement?.status !== 525) continue;
+      const candidate = String(measurement.cfRay ?? "");
+      const ray = /^[A-Fa-f0-9]{8,32}-[A-Za-z]{3}$/.test(candidate)
+        ? candidate : "unavailable";
+      const colo = ray === "unavailable" ? "unknown" : ray.split("-")[1].toUpperCase();
+      const date = new Date(measurement.observedAtUtc ?? NaN);
+      const utc = Number.isFinite(date.getTime()) ? date.toISOString() : "unknown";
+      log(`PUBLIC_TLS_525 key=${key} sample=${sample} utc=${utc} cfRay=${ray} colo=${colo}`);
+    }
+  }
   return summary;
 }
 
