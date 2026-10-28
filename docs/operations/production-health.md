@@ -173,3 +173,14 @@ A temporary public resolver failure fails the check visibly rather than
 misreporting success. This does not replace private origin DNS reachability,
 SMTP TLS, cPanel capacity or provider API inspections; keep those manual
 until a separate accepted monitoring parity plan exists.
+
+### Tokenless failure correlation in scheduled Public Health
+
+When a route cold/warm probe fails, the job now logs only the route key,
+probe phase, bounded HTTP status and a recognized network/TLS error code;
+malformed/unrecognized codes become `other` and no response headers, payload,
+URLs or secret strings are printed. Historical runs before this change cannot
+be retroactively classified. Both cold and warm samples remain required to
+pass, and the independent public DNS/mail audit still executes after a route
+failure; either check can fail the overall job. Only HTTP 525 samples additionally
+log the already-filtered Cloudflare ray identifier and UTC observation time.

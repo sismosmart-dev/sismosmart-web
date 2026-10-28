@@ -33,6 +33,7 @@ test("schedule is opt-in, main-only and completely free of production secrets", 
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /node scripts\/ops\/public-health\.mjs/);
   assert.match(workflow, /node scripts\/ops\/public-dns-mail\.mjs/);
+  assert.match(workflow, /if: \$\{\{ !cancelled\(\) \}\}/);
   assert.doesNotMatch(workflow, /secrets\.|DOPPLER_TOKEN|production-deploy|npm ci|deploy:|\bssh\b|\bcpanel\b/);
 });
 
@@ -49,4 +50,23 @@ test("Cloudflare 525 incidents log bounded UTC and validated ray evidence only",
   assert.match(logs.join("\n"), /PUBLIC_TLS_525 key=tr sample=cold utc=unknown cfRay=unavailable colo=unknown/);
   assert.doesNotMatch(logs.join("\n"), /DO-NOT-LOG|BAD|LEAK/);
   assert.equal(logs.filter((line) => line.startsWith("PUBLIC_TLS_525")).length, 2);
+});
+
+
+test("public health failure logs status and allowlisted error classes without leaking external text", async () => {
+  const report = success();
+  report.ok = false;
+  report.routes[1].cold = { ok: false, status: 503, errorCode: null, body: "SENSITIVE-RESPONSE-BODY" };
+  report.routes[2].warm = { ok: false, status: null, errorCode: "EAI_AGAIN", error: "PRIVATE-ERROR-DETAIL" };
+  report.routes[4].cold = { ok: false, status: "500\nUNSAFE", errorCode: "SECRET\nTOKEN" };
+  const logs = [];
+  const result = await runPublicHealth({ probe: async () => report, log: (line) => logs.push(line) });
+  assert.equal(result.ok, false);
+  const failures = logs.filter((line) => line.startsWith("PUBLIC_HEALTH_FAILED_SAMPLE"));
+  assert.deepEqual(failures, [
+    "PUBLIC_HEALTH_FAILED_SAMPLE key=en sample=cold kind=http-or-content status=503 errorCode=none",
+    "PUBLIC_HEALTH_FAILED_SAMPLE key=tr sample=warm kind=network-or-tls status=none errorCode=EAI_AGAIN",
+    "PUBLIC_HEALTH_FAILED_SAMPLE key=sitemap sample=cold kind=network-or-tls status=none errorCode=other",
+  ]);
+  assert.doesNotMatch(logs.join("\n"), /SENSITIVE|PRIVATE|UNSAFE|TOKEN|SECRET|500\n/);
 });
