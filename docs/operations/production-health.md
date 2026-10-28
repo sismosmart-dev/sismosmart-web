@@ -161,3 +161,15 @@ new controller, whether failures create actionable alerts, no legacy deploy
 trigger or external credential consumer, and valid old-organization admin
 permission. The **last** action is deletion of the old repository; deletion
 is not an acceptable test of the migration.
+
+### Public DNS/mail regression checks in the existing 6-hour health job
+
+The tokenless Public Health workflow checks public nameserver delegation,
+mail MX destination, SPF relay/terminal policy, DKIM RSA key length and DMARC
+policy/reporting. This runs as an extra step **within the existing Public
+Health job**, so it does not create another scheduled Actions run.
+Logs expose only pass/fail check labels, not TXT records, addresses or tokens.
+A temporary public resolver failure fails the check visibly rather than
+misreporting success. This does not replace private origin DNS reachability,
+SMTP TLS, cPanel capacity or provider API inspections; keep those manual
+until a separate accepted monitoring parity plan exists.

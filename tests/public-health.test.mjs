@@ -32,5 +32,6 @@ test("schedule is opt-in, main-only and completely free of production secrets", 
   assert.match(workflow, /environment: production/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /node scripts\/ops\/public-health\.mjs/);
+  assert.match(workflow, /node scripts\/ops\/public-dns-mail\.mjs/);
   assert.doesNotMatch(workflow, /secrets\.|DOPPLER_TOKEN|production-deploy|npm ci|deploy:|\bssh\b|\bcpanel\b/);
 });
