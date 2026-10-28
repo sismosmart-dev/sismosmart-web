@@ -25,7 +25,7 @@ Production never deploys automatically from a push. `Deploy Production` is manua
 - run from `main`;
 - provide the exact current `main` SHA;
 - use the documented operation confirmation phrase;
-- satisfy the write-capable `production-deploy` environment branch policy, which allows only `main`, and the owner-required deployment review;
+- satisfy the `production-deploy` environment main-only allowlist (mandatory reviewer approval removed by the owner on 2026-10-28);
 - use the scoped private-key credential or the explicitly configured password fallback;
 - preserve transactional activation and automatic rollback.
 
@@ -33,16 +33,18 @@ Production never deploys automatically from a push. `Deploy Production` is manua
 
 The `production` environment is restricted to `main` and has **no**
 production secret. The manual `status` job checks public routes only. The
-`production-deploy` environment also allows only `main` and requires approval
-from the repository owner before any workflow can fetch production credentials.
+`production-deploy` environment also allows only `main` and has **no required
+reviewer** as of 2026-10-28. Secrets remain restricted to that environment,
+and explicit dispatch and operation-specific controls still apply.
 
 ## Secret isolation
 
 One Doppler config (`main`) contains all deployment and operations
 secret values. GitHub only holds `DOPPLER_TOKEN_PRD` in `production-deploy`,
 scoped to Doppler **Read**. That token can still read privileged deployment
-SSH/cPanel credentials, so *all* jobs that use it are owner-reviewed and
-manual-only. The unreviewed `production` environment, public pull-request CI,
+SSH/cPanel and FTP credentials, so *all* jobs that use it remain
+**manual-only** and are not gated by environment reviewer clicks. The tokenless
+`production` environment, public pull-request CI,
 and automatic scheduler never receive it. Old-repository scheduled monitoring
 remains the sole active live controller during this transition. A separate
 public-only or independently restricted monitoring solution is required
@@ -85,10 +87,12 @@ require `governance/pr-origin` on PRs because that check runs after merges on
 `main`, not on normal pull requests.
 
 Both `production` and `production-deploy` environments have explicit
-main-only deployment-branch allowlists; only `production-deploy` requires
-manual owner review. Both currently contain no migrated secrets. Deploy and scheduled production jobs remain
-disabled in this repository until credentials, rollback, and monitoring pass
-acceptance; the legacy repository remains the active production controller.
+main-only deployment-branch allowlists; neither requires a GitHub environment
+reviewer. Only `production-deploy` holds the read-only Doppler `main` Service
+Token, verified by the non-deploying connectivity preflight on 2026-10-28.
+Actual production release and CMS writing still need independent backup,
+restore and release acceptance; the legacy repository continues scheduled
+analytics/monitoring using `prd_ops`.
 
 Security retains its independent, narrow Semgrep OSS job. Public-repository
 CodeQL analysis was independently verified against a successful `Analyze` step

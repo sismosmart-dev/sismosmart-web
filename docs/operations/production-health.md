@@ -2,9 +2,9 @@
 
 ## Purpose and safety boundary
 
-The new `Production Health` GitHub Actions workflow is a **manual-only**, owner-reviewed audit while the single Doppler config contains privileged credentials. The legacy repository remains the active scheduled monitor. It does not deploy, restart Passenger, reconcile release pointers, delete releases, submit forms, alter DNS, purge caches, or change hosting configuration.
+The new `Production Health` GitHub Actions workflow is a **manual-only** audit (no GitHub required-reviewer gate) while the single Doppler config contains privileged credentials. The legacy repository remains the active scheduled monitor. It does not deploy, restart Passenger, reconcile release pointers, delete releases, submit forms, alter DNS, purge caches, or change hosting configuration.
 
-The audit can fetch SSH/cPanel values from unified Doppler `main` **only** within the reviewed `production-deploy` environment. Doppler Read access does not make those provider credentials read-only; the automatic schedule was removed to avoid granting it full production keys. Its JSON artifact is retained for 14 days. Artifact upload is deliberately non-blocking so an Actions storage incident cannot hide the actual audit result.
+The audit can fetch SSH/cPanel values from unified Doppler `main` **only** within the main-only `production-deploy` environment. Doppler Read access does not make those provider credentials read-only; the automatic schedule was removed to avoid granting it full production keys. Its JSON artifact is retained for 14 days. Artifact upload is deliberately non-blocking so an Actions storage incident cannot hide the actual audit result.
 
 ## What is checked
 
@@ -79,7 +79,7 @@ At least one target workflow has two consecutive completed failures. Open both r
 ## Manual dispatch and report review
 
 1. Open Actions → Production Health → Run workflow.
-2. Use the current reviewed branch or `main`; do not add mutation inputs.
+2. Use `main`; do not add mutation inputs. No environment reviewer click is required.
 3. Review the job summary before downloading the JSON artifact.
 4. Confirm `classification`, `blocking`, `warnings`, release mismatches, route status/timing, capacity severities, form aggregates, and workflow streaks.
 5. Treat a missing report as a workflow/runtime error, not as a healthy result.

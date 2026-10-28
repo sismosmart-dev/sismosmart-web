@@ -16,7 +16,7 @@ A runner-image change does not alter production credentials, environment policy,
 
 ## Production deployment
 
-`.github/workflows/deploy-prod.yml` is the only production deployment control plane. Production deployment is manual-only and transactional. It requires the exact current `main` SHA, an operation-specific confirmation phrase, the `production` environment's main-only deployment policy, and scoped deployment credentials. A push never activates production automatically. The shared `production` environment does not currently enforce a required-reviewer gate because scheduled/read-only Production Health uses the same environment; mandatory human deploy approval first requires a deploy-only environment or equivalent secret/workflow separation.
+`.github/workflows/deploy-prod.yml` is the only production deployment control plane. Production deployment is manual-only and transactional. It requires the exact current `main` SHA, an operation-specific confirmation phrase, the `production` environment's main-only deployment policy, and scoped deployment credentials. A push never activates production automatically. Neither `production` nor `production-deploy` currently has a required-reviewer gate (owner decision on 2026-10-28). Both retain main-only branch policies. Explicit workflow dispatch, exact-SHA checks and operation-specific confirmations continue to gate deployments; automatic release from a push is prohibited.
 
 ## Read-only audits
 

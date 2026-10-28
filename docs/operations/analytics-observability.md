@@ -57,7 +57,7 @@ npm run ops:clarity -- status
 npm run ops:analytics-audit -- --base-url https://sismosmart.com --output .artifacts/analytics-observability.json
 ```
 
-The `Analytics Observability` GitHub workflow runs **manually only** and requires owner review in `production-deploy`. It uses the pinned official Doppler Fetch Secrets action with the `main` Service Token. Automatic triggers were removed because the single config includes privileged deployment credentials. The action masks and injects config values per job; the scope check fails closed if the expected config was not fetched, then the operational commands run using those values. It:
+The `Analytics Observability` GitHub workflow runs **manually only** from `production-deploy` (main-only, no required GitHub environment reviewer). It uses the pinned official Doppler Fetch Secrets action with the `main` Service Token. Automatic triggers were removed because the single config includes privileged deployment credentials. The action masks and injects config values per job; the scope check fails closed if the expected config was not fetched, then the operational commands run using those values. It:
 
 1. validates GA4, GTM, Search Console, and Clarity resource access;
 2. checks all six locales with a real Chrome browser;
