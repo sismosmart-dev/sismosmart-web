@@ -1,29 +1,32 @@
 # Content API: database and release prerequisites
 
-The SismoSmart website currently has six locale-specific TypeScript content sources. Issue #29 tracks progressive, opt-in API-managed edits with no rebuild needed for subsequent publications. **Authoring API code is merged but still disabled in production; no live SQL tables, grants, publishing credentials or live content have been enabled.**
+The SismoSmart website currently has six locale-specific TypeScript content sources. Issue #29 tracks progressive, opt-in API-managed edits with no rebuild needed for subsequent publications. **Authoring API code is merged but disabled in production. The live database contains two empty CMS tables; production SQL grants are not yet verified, and CMS writing/publishing is not enabled.**
 
-## Confirmed hosting facts (2026-10-27)
+## Confirmed hosting facts (updated 2026-10-28)
 
 - cPanel/CloudLinux Passenger serves the standalone Next.js production app (Node.js 22.23.4 on the hosting panel).
-- The existing `sismosma_web` MariaDB/MySQL database has **zero tables** (verified in signed-in phpMyAdmin). The hosting plan permits exactly **one database**, currently allocated to it; the database is reported as 0 bytes used.
-- One database user exists, but cPanel's database list shows **no privileged user assignment**. Assign explicit minimal rights only after backing up and verifying the intended account; do not silently reuse admin credentials.
-- cPanel's Backup screen reports **no automatically generated account backup**; a download option for the database exists. The account's Cron Jobs screen reports **no cron jobs**. A **restorable off-site SQL backup process** must be tested before accepting content writes in production.
+- The existing `sismosma_web` MariaDB/MySQL database has **two empty CMS tables**, `cms_content` and `cms_revision`, confirmed in signed-in phpMyAdmin on 2026-10-28. The hosting plan permits exactly **one database**, currently allocated to it. Do not rely on the cPanel summary disk-usage indicator to infer table or row counts.
+- A dedicated CMS database user has been visible in cPanel, but its effective database privileges are **not yet independently verified**. Inspect the grants and verify the intended account before activating CMS; do not silently reuse admin credentials.
+- cPanel's Backup screen reports **no automatically generated account backup**. One owner-downloaded production database SQL export has been verified, restored into an independent disposable MariaDB database and retained in two private device locations (the VPS copy is encrypted). The account's Cron Jobs screen previously reported **no cron jobs**. **Recurring fresh backup generation and multi-generation retention remain unverified** and are required before accepting production content writes.
 - No existing content database driver is in the current live application. `mysql2/promise` is included here for future protected runtime reads/writes; no connection is attempted while `CMS_DB_ENABLED` is absent/false.
 
 **2026-10-28 schema update:** The owner confirmed the production database
 was empty, and the two additive `cms_content` and `cms_revision` tables
 have since been created through the authenticated cPanel SQL interface.
 Both tables were verified empty and the public 8-route health probe passed.
-**A real production backup and independent restoration remain unverified**,
-so the backup/retention and guarded release requirements below still apply
+**A real owner-downloaded production SQL export and its independent isolated
+restoration were verified on 2026-10-28.** An additional encrypted off-host
+copy was verified on a separate owner-controlled VPS. This proves one snapshot
+can be recovered, **not** scheduled backup generation or retention across
+multiple snapshots, so the remaining guarded release requirements apply
 before enabling CMS writes. The canonical Doppler target is `main`; the
 separate older configs must remain until their consumers are migrated.
 
 ## Schema and safe activation sequence
 
-1. Independently verify the active database is still empty and make/export a tested backup before any DDL. Do not assume a future zero-byte display means there are zero tables.
-2. Grant a dedicated CMS SQL user minimum rights on the existing database. Never use a panel/root account or make the SQL port publicly reachable. Use cPanel's local `localhost:3306` endpoint.
-3. Apply the **additive** [`001_content_api.sql`](../../migrations/001_content_api.sql) migration. It defines `cms_content` and `cms_revision` with a composite locale/key primary key and independent revision history; it alters no existing table.
+1. Before any additional schema change, independently inspect the active database tables/rows and verify a fresh recoverable backup. The two existing CMS tables are currently empty. Do not assume a zero-byte display means there are zero tables.
+2. Verify that a dedicated CMS SQL user has only the rights needed on the existing CMS tables. Runtime queries use **SELECT**, **INSERT**, and **UPDATE** (including `SELECT ... FOR UPDATE` and `INSERT ... ON DUPLICATE KEY UPDATE`); they do not require runtime **DROP**, **ALTER**, **DELETE**, **CREATE**, or **GRANT**. Do not apply permissions without reviewing the actual host/user grants, and never use a panel/root account or expose the SQL port publicly. Use cPanel's local `localhost:3306` endpoint.
+3. The **additive** [`001_content_api.sql`](../../migrations/001_content_api.sql) migration has already created `cms_content` and `cms_revision`. Before any reapplication, independently confirm the current schema and the verified backup; do not assume additional DDL is required.
 4. Store `CMS_DB_ENABLED=true`, `CMS_DB_HOST`, `CMS_DB_USER`, `CMS_DB_PASSWORD`, `CMS_DB_NAME`, and (optional) `CMS_DB_PORT` in Doppler's production runtime scope **only after the DB user and data access are verified**. Never pass write-capable database credentials into scheduled health checks or source control.
 5. Publish only validated, approved records. First prove `en/home.hero` draft, publish, SEO consistency and rollback under a separate protected migration/release; then expand to other pages/locales.
 6. Keep source-controlled TypeScript copy as a failure fallback. Publication must invalidate the corresponding Next.js rendering and metadata caches and must not require a new GitHub deployment.
@@ -83,32 +86,41 @@ new GitHub deploy. First acceptance must verify exact HTTP responses for
 GET/PATCH/publish/rollback, published/draft separation, conflict handling,
 public HTML/meta/JSON-LD parity and a reset to baseline after `targetVersion: 0`.
 
-**Production retention/restore gap:** Hosting cPanel's Backup UI currently has
-no scheduled server-created backup and no cron jobs. Do not enable production
-content writes until a portable SQL dump is stored outside the web root,
-restored into an isolated test database, and a sustainable recurring backup
-with retention has been proven. An empty schema or GitHub release archive is
-not a substitute for a database backup.
+**Production retention/restore gap:** The owner-downloaded production SQL dump
+is stored privately off-host and has been restored in an isolated MariaDB.
+However, cPanel still reports no scheduled server-created backups; recurring
+source exports, multi-generation retention, and restore checks for future
+snapshots have **not** been proven. Do not enable content writes until that
+sustainable recurring backup process and the other release gates are accepted.
+A GitHub release artifact does not protect the production SQL database.
 
-## Production backup readiness (verified 2026-10-27)
+## Production backup readiness (updated 2026-10-28)
 
-The authenticated cPanel database manager shows `sismosma_web` with zero tables,
-and the existing `sismosma_user` is **not** assigned to that database. The
-provider's automatic backup feature is unavailable and the account has no
-cron jobs. Verified executable utilities on the remote cPanel host:
+The authenticated phpMyAdmin view shows `sismosma_web` with two empty CMS
+tables. Current privileges for the CMS SQL user have not yet been independently
+accepted. The cPanel Backup page still reports no automatically generated
+account backups; the last inspected Cron Jobs page reported no scheduled jobs.
+Previously verified executable utilities on the remote cPanel host:
 `mariadb-dump`, `mysqldump`, `mariadb`, `mysql`, `gzip`, `sha256sum`, `flock`,
 and `crontab`. No external backup service is required, but an off-host
 retention target and a tested import into an isolated database are mandatory.
 
-A manual SQL export was initiated through cPanel's official Backup interface,
-but the Chrome download remained incomplete. A subsequent authenticated API
-backup retrieval was blocked by platform safety controls; do **not** bypass
-that denial with another account, command, or tool. Accordingly no verified
-SQL backup exists yet and **no production schema, database grants, or runtime
-activation must be attempted**. This is an explicit release hold, not a claim
-that GitHub Actions artifacts or a code rollback protect database contents.
+On 2026-10-28 the owner manually downloaded an official cPanel SQL archive
+for `sismosma_web`. Its gzip integrity and checksum were checked; an actual
+independent MariaDB 11.4 import in a disposable network-isolated database
+restored exactly `cms_content` and `cms_revision`, with both primary keys
+verified and zero rows in each table. A private MSI copy and an age-encrypted
+VPS copy were independently checked against the same original checksum.
+No SQL contents, decryption identity or private backup path are published in
+this repository. An owner-operated, on-demand archiving script can verify newly
+manually downloaded exports and send an age-encrypted copy to the private VPS;
+this is **not** a scheduled source backup and it does not delete older copies.
+The previous automated-export restriction was not bypassed.
+These checks establish recovery of **one real production snapshot** only.
+**Do not activate CMS writes or deploy a CMS-enabled release** until recurring
+fresh snapshots, retention, SQL grants and the exact-release acceptance pass.
 
-## SQL backup command (prepared; live backup not yet accepted)
+## Optional native SQL backup command (prepared; scheduled use not accepted)
 
 A repeatable, non-destructive backup tool is now available:
 
@@ -146,7 +158,7 @@ retention and restore are proven, a daily cPanel cron schedule can be added
 without an additional paid service; do not activate it before checking output,
 server disk limits and privacy of the retention target.
 
-### Isolated test proof, not a live hosting backup
+### Independent restore evidence: synthetic tooling and real hosting snapshot
 
 On 2026-10-27, the backup tool was exercised against a temporary MariaDB 11.8
 container using the actual two-table CMS migration and sample rows. A portable
@@ -154,8 +166,11 @@ SQL archive was created, SHA-256 and complete gzip stream verified, and the
 archive imported successfully into a **separate** empty test database. The
 restored data matched one published content row and two revision records,
 including its revision/version. The temporary Docker container and test
-files were cleaned up. This proves the **toolchain** on a disposable schema,
-not that the live cPanel database has been backed up or that retention exists.
+files were cleaned up. This proves the **toolchain** on a disposable schema. Separately, the
+owner-downloaded real cPanel production SQL snapshot was restored into a
+network-isolated MariaDB 11.4 with exactly two CMS tables, valid primary keys
+and zero rows, and an encrypted second copy was verified on the owner VPS.
+Neither proof establishes automated future backups or a retention schedule.
 
 ### Safe automated restore acceptance (independent database only)
 
