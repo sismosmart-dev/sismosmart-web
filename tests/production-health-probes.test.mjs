@@ -351,3 +351,26 @@ test("HTTPS errors reject unsafe error codes", async () => {
     ttfbMs: null,
   });
 });
+
+
+test("HTTP 525 probe captures only a bounded public CF-Ray and UTC timestamp", async () => {
+  const route = { expectedStatuses: [200], key: "en", path: "/en" };
+  const result = await measureHttps({ hostname: "status.example.test", route }, {
+    httpsRequestImpl: createSuccessfulRequest({
+      body: "upstream TLS failed",
+      headers: { "cf-ray": "1234abcdef123456-AMS", server: "cloudflare", "x-private": "never logged" },
+      statusCode: 525, onOptions: () => {},
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.status, 525);
+  assert.equal(result.cfRay, "1234abcdef123456-AMS");
+  assert.match(result.observedAtUtc, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+  assert.doesNotMatch(JSON.stringify(result), /never logged|upstream TLS failed/);
+  const invalid = await measureHttps({ hostname: "status.example.test", route }, {
+    httpsRequestImpl: createSuccessfulRequest({
+      headers: { "cf-ray": "unsafe\nheaders" }, statusCode: 525, onOptions: () => {},
+    }),
+  });
+  assert.equal(invalid.cfRay, null);
+});

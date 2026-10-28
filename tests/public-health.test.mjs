@@ -35,3 +35,18 @@ test("schedule is opt-in, main-only and completely free of production secrets", 
   assert.match(workflow, /node scripts\/ops\/public-dns-mail\.mjs/);
   assert.doesNotMatch(workflow, /secrets\.|DOPPLER_TOKEN|production-deploy|npm ci|deploy:|\bssh\b|\bcpanel\b/);
 });
+
+
+test("Cloudflare 525 incidents log bounded UTC and validated ray evidence only", async () => {
+  const report = success();
+  report.ok = false;
+  report.routes[1].warm = { ok: false, status: 525, cfRay: "9abcde1234567890-FRA", observedAtUtc: "2026-10-28T03:00:00.000Z", secretHeader: "DO-NOT-LOG" };
+  report.routes[2].cold = { ok: false, status: 525, cfRay: "BAD\nLEAK", observedAtUtc: "not-a-date" };
+  const logs = [];
+  const result = await runPublicHealth({ probe: async () => report, log: (line) => logs.push(line) });
+  assert.equal(result.ok, false);
+  assert.match(logs.join("\n"), /PUBLIC_TLS_525 key=en sample=warm utc=2026-10-28T03:00:00\.000Z cfRay=9abcde1234567890-FRA colo=FRA/);
+  assert.match(logs.join("\n"), /PUBLIC_TLS_525 key=tr sample=cold utc=unknown cfRay=unavailable colo=unknown/);
+  assert.doesNotMatch(logs.join("\n"), /DO-NOT-LOG|BAD|LEAK/);
+  assert.equal(logs.filter((line) => line.startsWith("PUBLIC_TLS_525")).length, 2);
+});
