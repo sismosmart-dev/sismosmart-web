@@ -41,6 +41,7 @@ jobs:
           inject-env-vars: true
 
       - name: Verify scoped Doppler main grant
+        id: main_scope
         run: node scripts/ops/check-fetched-doppler.mjs main
 
       - name: Record canonical configuration status
@@ -56,6 +57,9 @@ jobs:
           npm run ops:analytics-admin-audit -- --output-dir .artifacts/analytics
 
       - name: Audit consent, tag loading, and form events in every locale
+        # Google Admin API failure must not suppress independent browser evidence.
+        # Fail closed if Doppler main scope/installation failed or job cancelled.
+        if: ${{ !cancelled() && steps.main_scope.outcome == 'success' && (success() || failure()) }}
         env:
           ANALYTICS_AUDIT_BASE_URL: https://sismosmart.com
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome

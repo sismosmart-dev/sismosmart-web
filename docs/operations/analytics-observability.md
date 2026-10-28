@@ -72,7 +72,7 @@ Browser reports contain request classes and event names only. They do not store 
 
 The browser consent and network audit is the production hard gate. Google Admin API access is a separate control-plane check:
 
-- an expired, revoked, or missing Google credential is recorded as `auth-degraded`; the administrative audit fails while the browser audit still runs and uploads its evidence;
+- an expired, revoked, or missing Google credential is recorded as `auth-degraded`; the administrative audit still fails the overall job, but the independent browser audit runs when the Doppler `main` scope check succeeded, so its evidence is also uploaded;
 - successful authentication followed by a GA4, GTM, or Search Console resource mismatch remains a hard failure;
 - the workflow uploads `admin-audit.json` even when a later step fails;
 - credential rotation is tracked in issue #81 and must never place refresh-token values in logs or artifacts.
