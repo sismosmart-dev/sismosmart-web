@@ -2,7 +2,8 @@ name: Doppler Connectivity Preflight
 
 # One-time, deliberately non-deploying acceptance workflow. The production
 # Doppler grant can read privileged infrastructure credentials, so it must
-# never run on pull requests, schedules, or without environment approval.
+# never run on pull requests or schedules. Dispatch remains manual, main-only,
+# and requires an exact commit SHA; no GitHub reviewer gate is configured.
 on:
   workflow_dispatch:
     inputs:

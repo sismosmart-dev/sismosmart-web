@@ -1073,7 +1073,7 @@ test("public repository static analysis is explicit and fail-closed", () => {
   assert.match(readText("docs/operations/repository-governance.md"), /Public organization repository protection and analysis/);
 });
 
-test("only owner-reviewed production jobs receive a unified Doppler token", () => {
+test("only manually dispatched protected production jobs receive a unified Doppler token", () => {
   const deploy = readText(".github/workflows/deploy-prod.yml");
   const health = readText(".github/workflows/production-health.yml");
   const analytics = readText(".github/workflows/analytics-observability.yml");
@@ -1110,7 +1110,7 @@ test("only owner-reviewed production jobs receive a unified Doppler token", () =
 });
 
 
-test("Doppler connectivity preflight is single-token, owner-reviewed, exact-SHA and non-deploying", () => {
+test("Doppler connectivity preflight is single-token, manually dispatched, exact-SHA and non-deploying", () => {
   const workflow = readText(".github/workflows/doppler-connectivity.yml");
   assert.match(workflow, /workflow_dispatch:/);
   assert.doesNotMatch(workflow, /schedule:|workflow_run:|pull_request:/);

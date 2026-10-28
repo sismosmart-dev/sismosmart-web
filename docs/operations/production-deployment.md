@@ -2,7 +2,7 @@
 
 ## Safety model
 
-Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (main-only with owner required-reviewer approval); the public-only `status` operation uses the separate, tokenless `production` environment. Only `DOPPLER_TOKEN_PRD` may be stored in GitHub `production-deploy`; SSH/cPanel/form/DNS/analytics values stay in consolidated Doppler config `main`. See `doppler-github-actions.md`. The unified Doppler config and owner-reviewed manual Fetch Secrets workflow were accepted; release deployment remains disabled pending separate acceptance.
+Production deployment is manual-only through the `Deploy Production` workflow. A merge to `main` must not deploy the site automatically. Mutation-capable operations run in the `production-deploy` environment (restricted to `main`, **no required-reviewer gate** as of 2026-10-28); the public-only `status` operation uses the separate, tokenless `production` environment. Only `DOPPLER_TOKEN_PRD` may be stored in GitHub `production-deploy`; SSH/cPanel/form/DNS/analytics values stay in consolidated Doppler config `main`. See `doppler-github-actions.md`. Explicit workflow dispatch, exact-SHA and confirmation checks still apply. The read-only Doppler connectivity test passed, but a CMS release needs separate production authorization and independently verified database recovery.
 
 Use the workflow operations in this order:
 

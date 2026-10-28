@@ -3,64 +3,80 @@
 ## Canonical target and security boundary
 
 Doppler project: `sismosmart-web`. **The only target config is `main`.**
-CI and unreviewed status tasks remain token-free. Production SSH, cPanel,
-forms, CMS, analytics and DNS credentials may be fetched only by jobs gated
-by the GitHub `production-deploy` environment's required reviewer approval.
+CI and tokenless public status tasks remain credential-free. The GitHub
+`production-deploy` environment is restricted to the `main` branch but has
+**no required-reviewer approval gate** (owner decision, 2026-10-28). Privileged
+Doppler values are available only to its explicitly dispatched workflows;
+never add unreviewed PR or scheduled triggers to those workflows. The Read
+token also exposes SSH/cPanel and FTP credentials, so manual dispatch and
+least-privilege code paths remain important.
 
 The approved GitHub secret location is exclusively the `production-deploy`
 environment, under `DOPPLER_TOKEN_PRD`. That secret must be a **read-only
 Doppler Service Token scoped to `main`**, not a workspace/CLI token. Never
 expose it in `production`, repository-level secrets, logs or source control.
-The existing protected environment, exact-main-SHA production gate and
-manual deployment approval remain in effect. Consolidating the config does
-**not** authorize production deployment or CMS content publication.
+The main-only environment allowlist and exact-main-SHA production gate remain.
+Production deployment still requires an explicit `workflow_dispatch`, its
+operation-specific confirmation, and independent release authorization. There
+is **no** separate GitHub "Review deployments" step. Consolidating config
+access does **not** authorize production deployment or CMS publication.
 
-## Observed migration status (2026-10-28; verify live before retiring anything)
+## Observed migration status (2026-10-28; verify before retirement)
 
-The `main` config already held 52 names before consolidation. `PUBLIC_BASE_URL`
-was successfully copied into `main` from a second config, with no value
-printed. Other required fields have **not yet been migrated and verified**:
-`CMS_DB_HOST`, `CMS_DB_NAME`, `CMS_DB_USER`, `CMS_DB_PASSWORD`, and
-`DNS_ORIGIN_IPV4`. The former root configs `ci`, `prd_app`, `prd_ops`,
-`prd_deploy` remain live and **must not be deleted while there are unknown
-consumers**. A sensitive-data migration attempt was stopped by the execution
-platform; do not bypass the denial by using another host, client or account.
+The owner migrated the previously missing production form, DNS and CMS secrets
+via a local, value-suppressed Doppler CLI script. Live names-only metadata then
+confirmed `main` has **67 key names (including 3 Doppler-managed), 35 nonempty
+and 32 empty**, with the four CMS DB fields, `CMS_ADMIN_TOKEN`, both form
+endpoints and `DNS_ORIGIN_IPV4` now nonempty. Optional analytics and legacy
+keys can legitimately remain empty. Both CMS runtime switches are still
+**`false`**: this is not production CMS write approval.
 
-The source configs also contain conflicting values for `CONTACT_FORM_ENDPOINT`,
-`WAITLIST_FORM_ENDPOINT`, and `GOOGLE_OAUTH_REFRESH_TOKEN`. Do not overwrite
-working `main` values until their live consumers and intended value are
-verified. Doppler-managed `DOPPLER_CONFIG`, `DOPPLER_ENVIRONMENT`, and
-`DOPPLER_PROJECT` metadata is generated for the selected config, not copied.
+The owner created a read-only `production-deploy` service token for `main` and
+updated the GitHub environment secret `DOPPLER_TOKEN_PRD`. The non-deploying
+**Doppler Connectivity Preflight** run
+[40612445560](https://github.com/sismosmart-dev/sismosmart-web/actions/runs/40612445560)
+passed on exact main SHA `f96149d86dd539216342068ccbede52df9bbb12c`.
+The environment required-reviewer gate was later removed at owner request,
+leaving the `main`-only deployment branch allowlist in place.
 
-The current `main` secret inventory also includes legacy key names
-`MEASUREMENTPROTOCOLAPI`, `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT`, and
-`NEXT_PUBLIC_NEWSLETTER_FORM_ENDPOINT`. Determine consumers and remove
-obsolete values using an approved method before treating inventory validation
-as accepted. Do not purge a credential merely because its name is old.
+**Do not overwrite conflicting nonempty values:** `CPANEL_HOST` and
+`GOOGLE_OAUTH_REFRESH_TOKEN` differ between some old configs and `main`.
+The auto-generated `DOPPLER_CONFIG`, `DOPPLER_ENVIRONMENT`, and
+`DOPPLER_PROJECT` metadata must never be copied as user values. The
+value-empty legacy names `MEASUREMENTPROTOCOLAPI`,
+`NEXT_PUBLIC_CONTACT_FORM_ENDPOINT`, and
+`NEXT_PUBLIC_NEWSLETTER_FORM_ENDPOINT` are still present in `main`;
+review dependencies before any deletion. Do not interpret key-name or
+nonempty-value checks as production backup or secret-consumer proof.
 
-Read-only service tokens still attached to older configs include
-`github-actions-prd-deploy` (`prd_deploy`) and
-`github-analytics-observability` (`prd_ops`). Revoking/deleting either
-config breaks its consumers. Rotate/switch all users of those tokens first.
-The official Fetch Secrets action injects and masks values but exposes all
-secrets of its selected config to the job: CI must not fetch this token.
+Eight Doppler configs still exist. The older `prd_ops` **read-only** token
+`github-analytics-observability` is still used by the **original** repository
+`SismoSmart/sismosmart-web`; `prd_deploy` and `prd_sismosmart` also retain
+legacy read-only tokens. Do not revoke them or delete their configs until all
+consumers have been separately migrated and verified. Seven of eight configs
+are locked environment roots; their lifecycle is not an ordinary branch
+config deletion.
+
+The official Fetch Secrets action masks its output but gives each job access
+to every secret in `main`. Keep privileged jobs manually dispatched and do not
+use this token in normal CI or automatically scheduled jobs.
 
 ## Verified retirement sequence
 
-1. Preserve active secrets and metadata without printing values. Resolve
-   conflicting keys by checking real application behavior and owner intent.
-2. Complete the remaining `main` secret-value migration through an approved
-   secure channel, and verify the transferred values match the originals.
-3. Mint **one** read-only Service Token for `main` and update the protected
-   GitHub `production-deploy` environment secret `DOPPLER_TOKEN_PRD` via a
-   secure input (never logs, argv or source).
-4. Run `node scripts/ops/validate-doppler-contract.mjs --doppler main`, then
-   the reviewer-approved **Doppler Connectivity Preflight** using exact main
-   commit SHA; it must pass all required-key and scope checks.
-5. Confirm any remaining external analytics/operational consumers are migrated
-   and their access remains working; revoke old tokens, then remove obsolete
-   configs. Do not remove a Doppler root/environment if provider constraints
-   or active consumers block it. Keep the project-backed audit trail.
+1. **Completed:** copy necessary values into `main` without exposing them;
+   preserve conflicting nonempty values and verify intended source identity.
+2. **Completed:** configure one read-only `main` Service Token as GitHub's
+   `production-deploy` environment secret `DOPPLER_TOKEN_PRD`, and pass the
+   manually dispatched exact-SHA Doppler Connectivity Preflight. Re-run the
+   preflight after meaningful token changes, but no reviewer click is needed.
+3. **Still required:** review names-only contract warnings and retire empty,
+   obsolete aliases only after consumer checks and authorized safe deletion.
+4. **Still required:** migrate the original repository's `prd_ops`-bound
+   analytics workflow (separate repository change authority), verify its
+   replacement, and confirm other service-token consumers have moved.
+5. **Still required:** revoke old tokens only after confirmed cutover, then
+   retire unused branch configs and their root environments as permitted by
+   Doppler. Keep the project-backed audit trail.
 
 No production CMS write activation is accepted until the actual production
 backup, private off-host retention, independent recovery and release controls
