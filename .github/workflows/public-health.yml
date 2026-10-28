@@ -2,7 +2,8 @@ name: Public Health
 
 # Can replace scheduled public-facing checks without giving an unattended
 # workflow the unified production Doppler token or privileged SSH/cPanel keys.
-# The schedule remains inert until the old monitoring handoff is accepted.
+# The six-hour schedule is active through the repository opt-in variable;
+# historical privileged origin/hosting checks are still separate manual audits.
 on:
   workflow_dispatch:
   schedule:

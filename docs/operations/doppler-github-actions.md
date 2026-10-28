@@ -50,9 +50,11 @@ review dependencies before any deletion. Do not interpret key-name or
 nonempty-value checks as production backup or secret-consumer proof.
 
 Eight Doppler configs still exist. The older `prd_ops` **read-only** token
-`github-analytics-observability` is still used by the **original** repository
-`SismoSmart/sismosmart-web`; `prd_deploy` and `prd_sismosmart` also retain
-legacy read-only tokens. Do not revoke them or delete their configs until all
+`github-analytics-observability` was historically used by the **original**
+repository `SismoSmart/sismosmart-web`, whose overlapping scheduled Analytics
+workflow is now disabled. Token presence does not prove a current consumer or
+safe revocation. `prd_deploy` and `prd_sismosmart` retain legacy read-only
+tokens too. Do not revoke them or delete their configs until all
 consumers have been separately migrated and verified. Seven of eight configs
 are locked environment roots; their lifecycle is not an ordinary branch
 config deletion.

@@ -45,11 +45,15 @@ scoped to Doppler **Read**. That token can still read privileged deployment
 SSH/cPanel and FTP credentials, so *all* jobs that use it remain
 **manual-only** and are not gated by environment reviewer clicks. The tokenless
 `production` environment, public pull-request CI,
-and automatic scheduler never receive it. Old-repository scheduled monitoring
-remains the sole active live controller during this transition. A separate
-public-only or independently restricted monitoring solution is required
-before any unattended new-repository health handoff. See
-`doppler-github-actions.md`.
+and automatic scheduler never receive it. The new repository's tokenless,
+main-only `Public Health` workflow is now an active six-hour scheduled public
+monitor. Its first actual successful `schedule` run was #40592772388 on
+2026-10-27; subsequent public failures are tracked without hiding the run
+conclusion. It checks public routes and DNS/mail but **does not reproduce**
+privileged origin, Passenger, SMTP, quota or analytics inspections. The legacy
+repository's overlapping scheduled workflows have been disabled, while
+manual protected deep checks remain available. See
+`doppler-github-actions.md` and `production-health.md`.
 
 ## Required checks
 
@@ -90,9 +94,12 @@ Both `production` and `production-deploy` environments have explicit
 main-only deployment-branch allowlists; neither requires a GitHub environment
 reviewer. Only `production-deploy` holds the read-only Doppler `main` Service
 Token, verified by the non-deploying connectivity preflight on 2026-10-28.
-Actual production release and CMS writing still need independent backup,
-restore and release acceptance; the legacy repository continues scheduled
-analytics/monitoring using `prd_ops`.
+Actual production release and CMS writing still need separate release
+acceptance. A genuine production SQL snapshot was recovered in an isolated
+MariaDB and redundantly retained privately, but future recurring source
+backups and CMS release readiness have not been accepted. The old repository's
+overlapping scheduled analytics/monitoring workflows are disabled; historical
+Doppler credentials remain until all consumer dependencies are audited.
 
 Security retains its independent, narrow Semgrep OSS job. Public-repository
 CodeQL analysis was independently verified against a successful `Analyze` step
