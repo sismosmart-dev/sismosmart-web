@@ -35,6 +35,7 @@ import {
 } from "./releases-lib.mjs";
 import { assertValidationBaseline, VALIDATION_PHASES } from "./preflight-policy.mjs";
 import { runDeploymentTransaction } from "./transaction.mjs";
+import { capturePreviousWebrootScript } from "./rollback-webroot.mjs";
 
 function shellEscape(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
@@ -861,6 +862,17 @@ printf 'preflight_status=healthy\n'
         remoteAppRoot,
         requireProcess: true,
       });
+      // A successful deployment deletes its temporary recovery tarball.
+      // Retain an integrity-checked copy on the previous known-good release
+      // so an intentional later manual downgrade can restore the webroot.
+      if (context.previousRelease) {
+        await runRemoteCommand(config, capturePreviousWebrootScript({
+          releasesRoot: remoteReleasesRoot,
+          previousRelease: context.previousRelease,
+          backupArchive: publicBackupPath,
+        }));
+        console.log("DEPLOY_MANUAL_ROLLBACK_SNAPSHOT status=ready");
+      }
       const completedAt = new Date().toISOString();
       context.releaseMetadata = {
         ...context.releaseMetadata,
