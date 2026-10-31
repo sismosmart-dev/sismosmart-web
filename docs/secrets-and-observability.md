@@ -65,19 +65,27 @@ unless an approved maintenance action invokes the underlying command with
 and must have mode `0600`.
 
 Do not substitute a bare `doppler run` command, directory-scoped config or
-a personal/CLI token inside GitHub Actions. One production config means only
-reviewer-gated jobs may fetch its entire credential inventory.
+a personal/CLI token inside GitHub Actions. Because the unified config includes
+deployment-capable credentials, only explicitly dispatched, main-restricted
+operations may fetch it. The `production-deploy` environment has **no required
+reviewer**; manual dispatch, branch restrictions and operation-specific SHA
+and confirmation guards provide the applicable release controls.
 
-For GitHub Actions, only `DOPPLER_TOKEN_PRD` in the reviewed
-`production-deploy` environment can read the unified config. The production
-SSH/cPanel/form/DNS credentials remain exclusively in Doppler. The unreviewed
-`production` environment holds **no** token; unattended privileged monitoring
-remains with the old live controller until a separate safe replacement passes.
+For GitHub Actions, only `DOPPLER_TOKEN_PRD` in the main-only
+`production-deploy` environment can read the unified config. Production
+SSH/cPanel/form/DNS credentials remain exclusively in Doppler. The tokenless
+`production` environment is used for unattended public-only checks.
+Overlapping privileged monitoring schedules in the historical repository
+were disabled, not replaced with equivalent private monitoring. Deep origin,
+Passenger, hosting, SMTP and analytics audits in the new repository remain
+manual-only until a separately approved least-privileged replacement exists
+or reduced unattended coverage is explicitly accepted.
 
 ## Migration and rollback boundary
 
-Only `main` is the target production Doppler config. Existing `ci`,
-`prd_app`, `prd_deploy` and `prd_ops` are temporary migration sources,
+Only `main` is the target production Doppler config. The seven existing
+legacy configs (`ci`, `prd_app`, `prd_deploy`, `prd_ops`,
+`genel-secret`, `prd`, `prd_sismosmart`) are migration sources,
 **not safe to delete until** all their credentials, Service Tokens,
 consumers and value conflicts have been verified and migrated. The secure
 consolidation status, outstanding secrets and retirements are documented
@@ -85,9 +93,11 @@ in `operations/doppler-github-actions.md`. Do not replace known-working
 forms/analytics credentials with a different value just because its key
 name matches.
 
-The protected GitHub environment token must target `main` and must be
-rotated before those old configs are retired. Do not activate production
-CMS publishing without independent data-recovery and release acceptance.
+The approved GitHub environment token already targets `main`. Revoke old
+config tokens only after independent consumer verification and authorized
+retirement, without replacing the working `main` token unnecessarily.
+Do not activate production CMS publishing without independent data-recovery
+and release acceptance.
 
 ## Sentry
 
