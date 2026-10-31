@@ -150,6 +150,32 @@ Preserve that JSON and its referenced backups. Do not start a second deployment.
 
 When any path or application identity differs from the recovery JSON, stop and investigate instead of guessing.
 
+## Deliberate manual downgrade (separate from automatic failure rollback)
+
+The standalone npm run deploy:rollback command is dry-run by default.
+It checks current and Passenger pointers, BUILD_ID, the previous known-good
+release, and an integrity-verified per-release webroot snapshot. Existing
+releases created before this safeguard is deployed may lack a snapshot.
+Missing or invalid backups must fail closed, not partially change production.
+
+Each future successful deployment preserves a checksum-verified copy of the
+pre-deploy public_html archive in the prior retained release, along with the
+original temporary automatic-rollback backup until normal cleanup. This
+increases storage within the six-release retention policy.
+
+A separately authorized recovery operator can use
+ROLLBACK_CONFIRMATION=rollback-production npm run deploy:rollback -- --apply
+only after confirming no concurrent deployment and reviewing the exact
+snapshot. Applying replaces the webroot, including any intervening uploads,
+and switches Passenger and the current symlink. It first retains a private
+temporary undo archive and attempts to restore the original release on error.
+Unrecoverable failure requires preserving the undo backup for manual recovery.
+Do not run --apply as a status probe.
+
+These local tests do not establish live rollback readiness. Verify snapshot
+generation on the next independently authorized deployment and prove actual
+end-to-end recovery in an isolated environment first.
+
 ## Release metadata and retention
 
 Every prepared release contains `.release.json` with the release ID, commit SHA, build ID, SHA-256 checksum, artifact/checksum byte counts, transfer duration, timestamps, total deployment duration, and lifecycle status. A prepared release has `.release-prepared`; only a fully verified successful release receives `.release-ready`. Failed releases receive `.release-failed` and are excluded from manual rollback selection.
