@@ -421,7 +421,8 @@ jobs:
         run: |
           npm run lint
           npm run typecheck
-          npm test
+          # Tests exercise their own CMS fixtures; do not inherit production feature flags.
+          CMS_DB_ENABLED=false CMS_WRITE_ENABLED=false npm test
           npm run build
           npm audit --audit-level=high
 
