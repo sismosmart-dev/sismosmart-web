@@ -27,7 +27,11 @@ export function backupSettings(environment = process.env) {
   const database = environment.CMS_BACKUP_DB || "sismosma_web";
   const host = environment.CMS_BACKUP_HOST || "localhost";
   const port = Number(environment.CMS_BACKUP_PORT || "3306");
-  if (!user || !password || !/^[a-zA-Z0-9_]+$/.test(database) ||
+  // A production backup must not silently use an obvious administrator account.
+  // This name check is not a substitute for verifying actual SELECT-only grants.
+  if (!/^[a-zA-Z][a-zA-Z0-9_]{2,63}$/.test(user || "") ||
+      ["root", "admin", "administrator", "mysql"].includes(user.toLowerCase()) ||
+      !password || !/^[a-zA-Z0-9_]+$/.test(database) ||
       !["localhost", "127.0.0.1", "::1"].includes(host) ||
       !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("CMS_BACKUP_CONFIGURATION_INVALID");
@@ -58,6 +62,12 @@ export async function createBackup(environment = process.env, { command = "maria
   await mkdir(options.directory, { recursive: true, mode: 0o700 });
   const realDir = await realpath(options.directory);
   validateBackupDir(realDir);
+  // mkdir's mode does not restrict permissions on a pre-existing directory.
+  // Refuse to write any snapshot into a directory accessible by other users.
+  const directoryStats = await stat(realDir);
+  if (!directoryStats.isDirectory() || (directoryStats.mode & 0o077) !== 0) {
+    throw new Error("CMS_BACKUP_DIRECTORY_PERMISSIONS_UNSAFE");
+  }
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const base = path.join(realDir, `sismosmart-cms-${stamp}-${randomBytes(4).toString("hex")}.sql.gz`);
   const temporary = `${base}.partial`;

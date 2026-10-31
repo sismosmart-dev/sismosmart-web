@@ -138,7 +138,10 @@ from a protected secret-injecting environment; the placeholders above illustrate
 the required names, **not** an instruction to paste passwords interactively.
 
 The tool requires the native `mariadb-dump` binary and a separate account with
-SELECT/SHOW VIEW/TRIGGER rights as needed for the CMS schema. It runs a
+SELECT/SHOW VIEW/TRIGGER rights as needed for the CMS schema. It refuses common
+administrator account names and pre-existing backup directories accessible to
+other users; this name/permission preflight does **not** replace checking
+the actual SQL grants before running against production. It runs a
 single-transaction dump of the local database, writes a `.sql.gz` archive
 atomically in a private directory outside the web root, and emits a matching
 SHA-256 sidecar. Use `npm run ops:cms-db-verify -- /absolute/path/to/backup.sql.gz`

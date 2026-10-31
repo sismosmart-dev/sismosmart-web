@@ -40,7 +40,25 @@ test("backup requires dedicated credentials, a safe absolute directory and loopb
   assert.throws(() => backupSettings({ ...env, CMS_BACKUP_PORT: "1;rm" }), /CMS_BACKUP_CONFIGURATION_INVALID/);
   assert.throws(() => backupSettings({ ...env, CMS_BACKUP_DB: "db;DROP" }), /CMS_BACKUP_CONFIGURATION_INVALID/);
   assert.throws(() => backupSettings({ ...env, CMS_BACKUP_PASSWORD: "" }), /CMS_BACKUP_CONFIGURATION_INVALID/);
+  for (const privilegedUser of ["root", "ADMIN", "mysql", "administrator"]) {
+    assert.throws(() => backupSettings({ ...env, CMS_BACKUP_USER: privilegedUser }), /CMS_BACKUP_CONFIGURATION_INVALID/);
+  }
+  assert.throws(() => backupSettings({ ...env, CMS_BACKUP_USER: "invalid user" }), /CMS_BACKUP_CONFIGURATION_INVALID/);
 });
+
+test("existing group-readable backup directory is rejected without changing its permissions", async () => withTmp(async (dir) => {
+  const output = path.join(dir, "group-readable");
+  const { mkdir } = await import("node:fs/promises");
+  await mkdir(output, { mode: 0o755 });
+  await chmod(output, 0o755);
+  const command = await createFakeDump(dir, "echo 'CREATE TABLE cms_test(id integer);'");
+  await assert.rejects(
+    () => createBackup(makeConfig(output), { command }),
+    /CMS_BACKUP_DIRECTORY_PERMISSIONS_UNSAFE/,
+  );
+  assert.equal((await stat(output)).mode & 0o777, 0o755);
+  assert.deepEqual(await readdir(output), []);
+}));
 
 test("genuine gzip archive, verified checksum and restrictive file modes", async () => withTmp(async (dir) => {
   const command = await createFakeDump(dir, `printf 'CREATE TABLE cms_demo (id integer);\\nINSERT INTO cms_demo VALUES (1);\\n'`);
