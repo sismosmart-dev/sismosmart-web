@@ -4,21 +4,22 @@ export function shellEscape(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
-function envFileExpression() {
-  return "\\( -name '.env' -o -name '.env.*' \\)";
+export function releaseSensitiveFileExpression() {
+  // Rollback archives may contain protected webroot and .htaccess content.
+  return "\\( -name '.env' -o -name '.env.*' -o -name '.rollback-public-html.tar.gz' -o -name '.rollback-public-html.tar.gz.sha256' \\)";
 }
 
 export async function normalizeReleasePermissions(config, releaseRoot) {
   const root = shellEscape(releaseRoot);
-  const envExpression = envFileExpression();
+  const releaseExpression = releaseSensitiveFileExpression();
 
   await runRemoteCommand(
     config,
     [
       `test -d ${root}`,
       `find ${root} -xdev -type d -exec chmod 0755 {} +`,
-      `find ${root} -xdev -type f -exec chmod 0644 {} +`,
-      `find ${root} -xdev -type f ${envExpression} -exec chmod 0600 {} +`,
+      `find ${root} -xdev -type f ! ${releaseExpression} -exec chmod 0644 {} +`,
+      `find ${root} -xdev -type f ${releaseExpression} -exec chmod 0600 {} +`,
     ].join(" && "),
   );
 }
@@ -44,7 +45,7 @@ export async function auditPermissions(
   const release = shellEscape(releaseRoot);
   const publicHtml = shellEscape(publicHtmlPath);
   const owner = shellEscape(expectedOwner);
-  const envExpression = envFileExpression();
+  const releaseExpression = releaseSensitiveFileExpression();
   const htaccess = shellEscape(`${publicHtmlPath}/.htaccess`);
 
   const { stdout } = await runRemoteCommand(
@@ -55,8 +56,8 @@ export async function auditPermissions(
       `test -d ${publicHtml}`,
       `release_group_other_writable=$(find ${release} -xdev -type f -perm /022 -print | wc -l)`,
       `release_bad_directories=$(find ${release} -xdev -type d ! -perm 0755 -print | wc -l)`,
-      `release_bad_regular=$(find ${release} -xdev -type f ! ${envExpression} ! -perm 0644 -print | wc -l)`,
-      `release_bad_secrets=$(find ${release} -xdev -type f ${envExpression} ! -perm 0600 -print | wc -l)`,
+      `release_bad_regular=$(find ${release} -xdev -type f ! ${releaseExpression} ! -perm 0644 -print | wc -l)`,
+      `release_bad_secrets=$(find ${release} -xdev -type f ${releaseExpression} ! -perm 0600 -print | wc -l)`,
       `release_wrong_owner=$(find ${release} -xdev ! -user ${owner} -print | wc -l)`,
       `public_group_other_writable=$(find ${publicHtml} -xdev -type f -perm /022 -print | wc -l)`,
       `public_bad_directories=$(find ${publicHtml} -xdev -type d ! -perm 0755 -print | wc -l)`,
