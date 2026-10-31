@@ -3,6 +3,14 @@
 ## Canonical target and security boundary
 
 Doppler project: `sismosmart-web`. **The only target config is `main`.**
+
+The tracked `doppler.yaml` intentionally specifies only the project: it does
+**not** automatically select production secrets for local development. While
+legacy configs remain, an interactive `doppler setup` may still list all
+eight; this does not mean they are approved for new consumers. Authorized
+operators should use the repository's explicit `main`-scoped npm wrappers,
+not an ambient or legacy Doppler CLI selection. Do not put a production
+config default in `doppler.yaml` merely to shorten the setup prompt.
 CI and tokenless public status tasks remain credential-free. The GitHub
 `production-deploy` environment is restricted to the `main` branch but has
 **no required-reviewer approval gate** (owner decision, 2026-10-28). Privileged

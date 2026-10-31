@@ -50,7 +50,7 @@ Use the existing focused test file when changing one subsystem, then run the com
 
 ## Public-facing application safety
 
-The source repository is private, but the deployed site and public APIs remain publicly accessible. Never commit or paste:
+The source repository, deployed site and public APIs are publicly accessible. Treat all committed content as public. Never commit or paste:
 
 - credentials, private keys, access material, recovery material, or configuration values;
 - private endpoints, origin addresses, provider account identifiers, or internal host details;
