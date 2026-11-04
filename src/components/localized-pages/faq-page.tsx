@@ -18,11 +18,11 @@ export function FaqPage({ locale, pages }: { locale: Locale; pages?: RoutePagesC
         {page.sections.map((section) => (
           <details
             key={section.title}
-            className="group rounded-lg border border-border bg-surface px-6 py-5 shadow-[0_14px_30px_rgba(5,23,12,0.05)]"
+            className="group rounded-lg border border-border bg-surface px-6 py-5 shadow-2 transition hover:border-primary-300 open:border-primary-400"
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-heading text-lg text-fg">
-              {section.title}
-              <span aria-hidden="true" className="text-2xl text-brand group-open:rotate-45">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-heading text-lg text-fg focus-visible:outline-2 focus-visible:outline-primary-600">
+              <span>{section.title}</span>
+              <span aria-hidden="true" className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xl font-bold text-primary-600 transition duration-200 group-open:rotate-45">
                 +
               </span>
             </summary>

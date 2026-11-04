@@ -287,7 +287,7 @@ export function CookieConsent({ locale }: { locale: Locale }) {
     <>
       <aside
         aria-label={copy.title}
-        className="fixed bottom-4 left-4 z-50 max-w-[22rem] rounded-[1.25rem] border border-border bg-surface p-4 text-fg shadow-[0_18px_45px_rgba(5,23,12,0.18)] sm:left-auto sm:right-4 sm:max-w-md"
+        className="fixed bottom-4 left-4 right-4 z-50 w-auto rounded-[1.25rem] border border-border bg-surface p-4 text-fg shadow-[0_18px_45px_rgba(5,23,12,0.18)] sm:left-auto sm:right-4 sm:w-full sm:max-w-md"
         data-cookie-consent=""
         hidden
       >

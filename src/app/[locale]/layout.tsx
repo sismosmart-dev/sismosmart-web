@@ -90,7 +90,7 @@ export default async function LocaleLayout({
   const primaryCtaHref = getLocalizedHref(locale, routeSegments.pilotProgram);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-[100dvh]">
       <script
         id={`document-language-${locale}`}
         dangerouslySetInnerHTML={{
@@ -108,7 +108,7 @@ export default async function LocaleLayout({
         {copy.accessibility.skipToContent}
       </a>
 
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[100dvh] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
         {/* The glass blur lives on an inner layer, not on <header> itself: a
             backdrop-filter on the header would become the containing block for
             the mobile nav's fixed overlay and trap it inside the header. */}
@@ -118,7 +118,7 @@ export default async function LocaleLayout({
             className="absolute inset-0 -z-10 border-b border-white/10 bg-[rgba(4,13,8,0.78)] backdrop-blur-xl"
           />
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex w-full items-center justify-between gap-4 lg:w-auto">
               <a className="flex items-center gap-3" href={withBasePath(`/${locale}`)}>
                 <BrandMark />
                 <span>
@@ -255,11 +255,11 @@ export default async function LocaleLayout({
             <div className="grid gap-8 sm:grid-cols-2">
               <section>
                 <h3 className="font-heading text-lg text-fg">{footerLabels.explore}</h3>
-                <ul className="mt-4 space-y-3 text-sm text-fg-muted">
+                <ul className="mt-4 space-y-1.5 text-sm text-fg-muted">
                   {footerNavigation.map((item) => (
                     <li key={item.label}>
                       <a
-                        className="hover:text-[var(--primary-600)]"
+                        className="inline-block py-1 transition-colors hover:text-[var(--primary-600)]"
                         href={getLocalizedHref(locale, item.href)}
                       >
                         {item.label}
@@ -271,20 +271,20 @@ export default async function LocaleLayout({
 
               <section>
                 <h3 className="font-heading text-lg text-fg">{footerLabels.contact}</h3>
-                <ul className="mt-4 space-y-3 text-sm text-fg-muted">
+                <ul className="mt-4 space-y-1.5 text-sm text-fg-muted">
                   <li>
-                    <a className="hover:text-[var(--primary-600)]" href={`mailto:${siteConfig.email}`}>
+                    <a className="inline-block py-1 transition-colors hover:text-[var(--primary-600)]" href={`mailto:${siteConfig.email}`}>
                       {siteConfig.email}
                     </a>
                   </li>
                   <li>
-                    <a className="hover:text-[var(--primary-600)]" href={`mailto:${siteConfig.pressEmail}`}>
+                    <a className="inline-block py-1 transition-colors hover:text-[var(--primary-600)]" href={`mailto:${siteConfig.pressEmail}`}>
                       {siteConfig.pressEmail}
                     </a>
                   </li>
                   <li>
                     <a
-                      className="hover:text-[var(--primary-600)]"
+                      className="inline-block py-1 transition-colors hover:text-[var(--primary-600)]"
                       href="https://www.linkedin.com/company/sismosmart"
                       rel="noreferrer"
                       target="_blank"
