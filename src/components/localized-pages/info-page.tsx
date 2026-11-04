@@ -116,7 +116,7 @@ export function InfoPage({
               </h2>
               <p className="text-base leading-7 text-emerald-50/80">{trend.caption}</p>
             </div>
-            <div className="overflow-hidden rounded-lg border border-[rgba(114,174,127,0.22)] bg-black/25 p-3 text-emerald-50/40">
+            <div className="overflow-hidden rounded-lg border border-[rgba(114,174,127,0.22)] bg-black/25 p-3 text-emerald-50/80">
               <FrequencyTrend
                 baselineLabel={trend.baseline}
                 className="h-52 w-full sm:h-64"
@@ -129,19 +129,24 @@ export function InfoPage({
       ) : null}
 
       <section className="grid gap-5 lg:grid-cols-2">
-        {page.sections.map((section) => (
-          <article
-            key={section.title}
-            className="rounded-lg border border-border bg-surface px-6 py-6 shadow-3"
-          >
-            <h2 className="font-heading text-2xl tracking-normal text-fg">
-              {section.title}
-            </h2>
-            <p className="mt-3 text-base leading-7 text-fg-muted">
-              {section.description}
-            </p>
-          </article>
-        ))}
+        {page.sections.map((section, index) => {
+          const isLastOdd = index === page.sections.length - 1 && page.sections.length % 2 === 1;
+          return (
+            <article
+              key={section.title}
+              className={`rounded-lg border border-border bg-surface px-6 py-6 shadow-3 transition hover:shadow-4 ${
+                isLastOdd ? "lg:col-span-2 bg-surface-2 border-primary-200/50" : ""
+              }`}
+            >
+              <h2 className="font-heading text-2xl tracking-normal text-fg">
+                {section.title}
+              </h2>
+              <p className="mt-3 text-base leading-7 text-fg-muted">
+                {section.description}
+              </p>
+            </article>
+          );
+        })}
       </section>
 
       {pageKey === "technology" && trend?.guideLinksHeading ? (

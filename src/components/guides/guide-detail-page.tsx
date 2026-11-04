@@ -16,16 +16,16 @@ export function GuideDetailPage({ locale, guide }: GuideDetailPageProps) {
   return (
     <main className="flex min-w-0 flex-1 flex-col gap-12 overflow-x-hidden pb-16 pt-8 sm:gap-16 sm:pt-10" id="content">
       <article className="max-w-3xl space-y-10" aria-labelledby="guide-title">
-        <nav className="space-y-2 text-sm text-fg-muted" aria-label={ui.breadcrumb}>
-          <a className="hover:text-[var(--primary-600)]" href={getLocalizedHref(locale, "/")}>
+        <nav className="flex flex-wrap items-center gap-1.5 text-sm text-fg-muted" aria-label={ui.breadcrumb}>
+          <a className="inline-flex min-h-[32px] items-center py-1 transition-colors hover:text-[var(--primary-600)]" href={getLocalizedHref(locale, "/")}>
             {ui.home}
           </a>
-          <span aria-hidden="true"> / </span>
-          <a className="hover:text-[var(--primary-600)]" href={getLocalizedHref(locale, "/guides")}>
+          <span aria-hidden="true" className="text-fg-subtle">/</span>
+          <a className="inline-flex min-h-[32px] items-center py-1 transition-colors hover:text-[var(--primary-600)]" href={getLocalizedHref(locale, "/guides")}>
             {ui.guides}
           </a>
-          <span aria-hidden="true"> / </span>
-          <span className="text-fg" aria-current="page">{guide.title}</span>
+          <span aria-hidden="true" className="text-fg-subtle">/</span>
+          <span className="inline-flex min-h-[32px] items-center py-1 text-fg" aria-current="page">{guide.title}</span>
         </nav>
 
         <header className="space-y-4">

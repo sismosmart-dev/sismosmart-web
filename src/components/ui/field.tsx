@@ -14,7 +14,7 @@ import type {
  * their own.
  */
 const controlClass =
-  "min-h-[3.25rem] w-full rounded-md border border-border bg-surface px-4 text-base text-fg outline-none placeholder:text-fg-subtle hover:border-border-strong";
+  "min-h-[3.25rem] w-full rounded-md border border-border bg-surface px-4 text-base text-fg outline-none placeholder:text-fg-subtle hover:border-border-strong focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-primary-600/20";
 
 export function Field({
   label,
@@ -53,7 +53,12 @@ export function Select({
   className,
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={`${controlClass} ${className ?? ""}`} {...props} />;
+  return (
+    <select
+      className={`${controlClass} cursor-pointer appearance-none bg-[url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23667085%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E")] bg-[length:1rem_1rem] bg-[right_1rem_center] bg-no-repeat pr-10 ${className ?? ""}`}
+      {...props}
+    />
+  );
 }
 
 export function ConsentCheckbox({
@@ -64,10 +69,10 @@ export function ConsentCheckbox({
   name?: string;
 }) {
   return (
-    <label className="flex items-start gap-3 text-sm leading-6 text-fg-muted">
+    <label className="flex cursor-pointer select-none items-start gap-3 py-1.5 text-sm leading-6 text-fg-muted">
       <input
         required
-        className="mt-1 h-4 w-4 rounded border-border-strong text-primary-600 accent-[var(--primary-600)]"
+        className="mt-0.5 h-5 w-5 shrink-0 rounded border-border-strong text-primary-600 accent-[var(--primary-600)]"
         name={name}
         type="checkbox"
         value="true"

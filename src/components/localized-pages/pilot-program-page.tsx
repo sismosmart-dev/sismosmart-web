@@ -19,19 +19,24 @@ export function PilotProgramPage({ locale, pages }: { locale: Locale; pages?: Ro
       />
 
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {page.sections.map((section) => (
-          <article
-            key={section.title}
-            className="rounded-lg border border-border bg-surface px-6 py-6 shadow-3"
-          >
-            <h2 className="font-heading text-2xl text-fg">
-              {section.title}
-            </h2>
-            <p className="mt-3 text-base leading-7 text-fg-muted">
-              {section.description}
-            </p>
-          </article>
-        ))}
+        {page.sections.map((section, index) => {
+          const isLastOdd = index === page.sections.length - 1 && page.sections.length % 3 !== 0;
+          return (
+            <article
+              key={section.title}
+              className={`rounded-lg border border-border bg-surface px-6 py-6 shadow-3 transition hover:shadow-4 ${
+                isLastOdd ? "md:col-span-2 xl:col-span-3 bg-surface-2 border-primary-200/50" : ""
+              }`}
+            >
+              <h2 className="font-heading text-2xl text-fg">
+                {section.title}
+              </h2>
+              <p className="mt-3 text-base leading-7 text-fg-muted">
+                {section.description}
+              </p>
+            </article>
+          );
+        })}
       </section>
 
       <section className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)]">

@@ -81,35 +81,41 @@ export function GuideHubPage({ locale, hub, guides }: GuideHubPageProps) {
         <h2 className="font-heading text-2xl tracking-normal text-fg">
           {hub.relatedResourcesHeading}
         </h2>
-        <ul className="space-y-3 text-sm">
+        <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 text-sm">
           <li>
-            <a className="text-[var(--primary-600)] hover:underline" href={getLocalizedHref(locale, "/product")}>
-              {ui.product}
+            <a className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3.5 font-medium text-fg shadow-1 transition hover:-translate-y-0.5 hover:border-primary-400 hover:text-[var(--primary-600)] hover:shadow-2" href={getLocalizedHref(locale, "/product")}>
+              <span>{ui.product}</span>
+              <span aria-hidden="true" className="text-primary-600">→</span>
             </a>
           </li>
           <li>
-            <a className="text-[var(--primary-600)] hover:underline" href={getLocalizedHref(locale, "/technology")}>
-              {ui.technology}
+            <a className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3.5 font-medium text-fg shadow-1 transition hover:-translate-y-0.5 hover:border-primary-400 hover:text-[var(--primary-600)] hover:shadow-2" href={getLocalizedHref(locale, "/technology")}>
+              <span>{ui.technology}</span>
+              <span aria-hidden="true" className="text-primary-600">→</span>
             </a>
           </li>
           <li>
-            <a className="text-[var(--primary-600)] hover:underline" href={getLocalizedHref(locale, "/how-it-works")}>
-              {ui.howItWorks}
+            <a className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3.5 font-medium text-fg shadow-1 transition hover:-translate-y-0.5 hover:border-primary-400 hover:text-[var(--primary-600)] hover:shadow-2" href={getLocalizedHref(locale, "/how-it-works")}>
+              <span>{ui.howItWorks}</span>
+              <span aria-hidden="true" className="text-primary-600">→</span>
             </a>
           </li>
           <li>
-            <a className="text-[var(--primary-600)] hover:underline" href={getLocalizedHref(locale, "/faq")}>
-              {ui.faq}
+            <a className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3.5 font-medium text-fg shadow-1 transition hover:-translate-y-0.5 hover:border-primary-400 hover:text-[var(--primary-600)] hover:shadow-2" href={getLocalizedHref(locale, "/faq")}>
+              <span>{ui.faq}</span>
+              <span aria-hidden="true" className="text-primary-600">→</span>
             </a>
           </li>
           <li>
-            <a className="text-[var(--primary-600)] hover:underline" href={getLocalizedHref(locale, "/glossary")}>
-              {ui.glossary}
+            <a className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3.5 font-medium text-fg shadow-1 transition hover:-translate-y-0.5 hover:border-primary-400 hover:text-[var(--primary-600)] hover:shadow-2" href={getLocalizedHref(locale, "/glossary")}>
+              <span>{ui.glossary}</span>
+              <span aria-hidden="true" className="text-primary-600">→</span>
             </a>
           </li>
           <li>
-            <a className="text-[var(--primary-600)] hover:underline" href={getLocalizedHref(locale, "/pilot-program")}>
-              {ui.pilotProgram}
+            <a className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3.5 font-medium text-fg shadow-1 transition hover:-translate-y-0.5 hover:border-primary-400 hover:text-[var(--primary-600)] hover:shadow-2" href={getLocalizedHref(locale, "/pilot-program")}>
+              <span>{ui.pilotProgram}</span>
+              <span aria-hidden="true" className="text-primary-600">→</span>
             </a>
           </li>
         </ul>

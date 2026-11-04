@@ -46,7 +46,11 @@ export function ProductVisual({
   const height = imageHeight ?? (compact ? 1176 : 1195);
 
   return (
-    <aside className={`product-panel mx-0 w-full max-w-[22rem] sm:mx-auto sm:max-w-full ${compact ? "product-panel--compact" : ""}`}>
+    <div
+      aria-label={title}
+      className={`product-panel w-full max-w-full ${compact ? "product-panel--compact" : ""}`}
+      role="region"
+    >
       {!compact ? (
         <div className="product-panel__header">
           <span className="status-pill">{eyebrow}</span>
@@ -109,6 +113,6 @@ export function ProductVisual({
           </div>
         ))}
       </div>
-    </aside>
+    </div>
   );
 }

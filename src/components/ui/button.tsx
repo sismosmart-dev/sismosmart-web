@@ -4,7 +4,7 @@ export type ButtonVariant = "primary" | "secondary" | "ghost" | "signal";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-md font-semibold no-underline transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0";
+  "inline-flex items-center justify-center gap-2 rounded-md font-semibold no-underline transition hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:active:scale-100";
 
 const variants: Record<ButtonVariant, string> = {
   primary:

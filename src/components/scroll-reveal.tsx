@@ -19,8 +19,16 @@ const REVEAL_SCRIPT = `
         entry.target.classList.add("is-visible");
         io.unobserve(entry.target);
       });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    }, { rootMargin: "200px 0px 100px 0px", threshold: 0.01 });
     targets.forEach(function (el) { io.observe(el); });
+
+    document.addEventListener("focusin", function (event) {
+      var revealEl = event.target && event.target.closest ? event.target.closest("[data-reveal]") : null;
+      if (revealEl && !revealEl.classList.contains("is-visible")) {
+        revealEl.classList.add("is-visible");
+        io.unobserve(revealEl);
+      }
+    });
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start);

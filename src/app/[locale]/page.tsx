@@ -161,7 +161,7 @@ export default async function LocaleHomePage({ params }: LocalePageProps) {
                   {copy.demo.sensorValue}
                 </span>
               </div>
-              <div className="overflow-hidden rounded-lg border border-[rgba(114,174,127,0.22)] bg-black/25 p-2 text-emerald-50/40">
+              <div className="overflow-hidden rounded-lg border border-[rgba(114,174,127,0.22)] bg-black/25 p-2 text-emerald-50/80">
                 <Seismogram
                   className="h-44 w-full sm:h-56"
                   pLabel="P"
@@ -290,13 +290,13 @@ export default async function LocaleHomePage({ params }: LocalePageProps) {
             {copy.faq.items.map((item) => (
               <details
                 key={item.title}
-                className="group rounded-md border border-border bg-surface-2 px-5 py-4 transition open:border-primary-300"
+                className="group rounded-md border border-border bg-surface-2 px-5 py-4 transition hover:border-primary-300 open:border-primary-400"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-heading text-lg tracking-normal text-fg">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-heading text-lg tracking-normal text-fg focus-visible:outline-2 focus-visible:outline-primary-600">
                   <span>{item.title}</span>
                   <span
                     aria-hidden="true"
-                    className="text-lg text-primary-600 transition group-open:rotate-45"
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-100/60 text-lg font-bold text-primary-600 transition duration-200 group-open:rotate-45"
                   >
                     +
                   </span>

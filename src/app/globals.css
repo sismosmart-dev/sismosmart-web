@@ -241,8 +241,7 @@ select {
 }
 
 .content-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 760px;
+  content-visibility: visible;
 }
 
 /* Scroll reveal. Elements marked [data-reveal] start slightly lowered and
@@ -257,6 +256,8 @@ select {
     transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
+.js-reveal [data-reveal]:has(:focus-visible),
+.js-reveal [data-reveal]:target,
 .js-reveal [data-reveal].is-visible {
   opacity: 1;
   transform: none;

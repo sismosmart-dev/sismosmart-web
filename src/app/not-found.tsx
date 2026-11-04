@@ -7,7 +7,7 @@ export default function NotFound() {
   const fallback = getLayoutChromeLabels(defaultLocale);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 text-center text-fg">
+    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col items-center justify-center px-6 text-center text-fg">
       <span className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-[var(--primary-600)]">
         404
       </span>
