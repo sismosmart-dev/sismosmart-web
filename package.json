@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@sentry/nextjs": "^10.76.2",
+    "@sentry/nextjs": "^11.13.0",
     "brace-expansion": "file:vendor/brace-expansion-compat",
     "mysql2": "3.24.6",
     "next": "16.4.2",
